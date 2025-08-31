@@ -11,3 +11,5 @@ $route["register"] = "app/register";
 $route["register-submit"] = "app/register_submit";
 $route["forgot-password"] = "app/forgot_password";
 $route["forgot-password-submit"] = "app/forgot_password_submit";
+$route["logout"] = "app/logout";
+$route["dashboard"] = "app/dashboard";

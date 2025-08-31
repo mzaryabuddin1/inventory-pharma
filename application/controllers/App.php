@@ -59,6 +59,14 @@ class App extends CI_Controller
         return date('Y-m-d H:i:s', strtotime("+$days days"));
     }
 
+    private function check_login()
+    {
+        if (!isset($_SESSION['user_id'])) {
+            redirect('welcome');
+            exit;
+        }
+    }
+
     public function register_submit()
     {
         // Validation rules
@@ -165,5 +173,20 @@ class App extends CI_Controller
 
         $success = array('success' => 1, 'message' => 'A new password has been sent to your email.');
         print_r(json_encode($success));
+    }
+
+    public function dashboard()
+    {
+        $this->check_login();
+        $this->load->view('dashboard');
+    }
+
+    public function logout()
+    {
+        // Destroy all session data
+        session_unset();
+        session_destroy();
+        redirect('welcome');
+        exit;
     }
 }
