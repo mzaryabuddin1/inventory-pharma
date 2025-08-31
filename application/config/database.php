@@ -75,10 +75,10 @@ $query_builder = TRUE;
 
 $db['default'] = array(
 	'dsn'	=> '',
-	'hostname' => 'localhost',
-	'username' => '',
-	'password' => '',
-	'database' => '',
+	'hostname' => '65.21.214.225',
+	'username' => 'vvehirec_inv_pha',
+	'password' => 'F]KuZg$#rg=SSL-W',
+	'database' => 'vvehirec_inv_pharma',
 	'dbdriver' => 'mysqli',
 	'dbprefix' => '',
 	'pconnect' => FALSE,
