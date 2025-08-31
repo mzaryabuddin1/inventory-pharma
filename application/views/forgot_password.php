@@ -20,40 +20,50 @@
 
 <body class="gray-bg">
 
-    <div class="middle-box text-center loginscreen animated fadeInDown">
-        <div>
-            <div>
+    <div class="passwordBox animated fadeInDown">
+        <div class="row">
 
+            <div class="col-md-12">
+                <div class="ibox-content">
 
+                    <h2 class="font-bold">Forgot password</h2>
+
+                    <p>
+                        Enter your email address and your password will be reset and emailed to you.
+                    </p>
+
+                    <div class="row">
+
+                        <div class="col-lg-12">
+                            <form class="m-t" role="form" id="theform">
+                                <div class="alert alert-danger d-none" id="error"></div>
+
+                                <div class="form-group">
+                                    <input type="email" class="form-control" placeholder="Email address" required="" name="email">
+                                </div>
+                                <div class="sk-spinner sk-spinner-wave d-none" id="spinner">
+                                    <div class="sk-rect1"></div>
+                                    <div class="sk-rect2"></div>
+                                    <div class="sk-rect3"></div>
+                                    <div class="sk-rect4"></div>
+                                    <div class="sk-rect5"></div>
+                                </div>
+                                <button type="submit" class="btn btn-primary block full-width m-b">Send new password</button>
+
+                            </form>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <h3>Welcome to Inventory Pharma</h3>
-            <p>Perfectly designed and precisely prepared inventory management software for pharmaceutical companies.
-                <!--Continually expanded and constantly improved Inspinia Admin Them (IN+)-->
-            </p>
-            <p>Login in. To see it in action.</p>
-            <form class="m-t" role="form" id="theform">
-                <div class="alert alert-danger d-none" id="error"></div>
-
-                <div class="form-group">
-                    <input type="email" class="form-control" placeholder="Email" required="" name="email">
-                </div>
-                <div class="form-group">
-                    <input type="password" class="form-control" placeholder="Password" required="" name="password">
-                </div>
-                <div class="sk-spinner sk-spinner-wave d-none" id="spinner">
-                    <div class="sk-rect1"></div>
-                    <div class="sk-rect2"></div>
-                    <div class="sk-rect3"></div>
-                    <div class="sk-rect4"></div>
-                    <div class="sk-rect5"></div>
-                </div>
-                <button type="submit" class="btn btn-primary block full-width m-b">Login</button>
-
-                <a href="<?= base_url() ?>forgot-password"><small>Forgot password?</small></a>
-                <p class="text-muted text-center"><small>Do not have an account?</small></p>
-                <a class="btn btn-sm btn-white btn-block" href="<?= base_url() ?>register">Create an account</a>
-            </form>
-            <p class="m-t"> <small>Copyright Liveasoft &copy; 2025</small> </p>
+        </div>
+        <hr />
+        <div class="row">
+            <div class="col-md-6">
+                Liveasoft
+            </div>
+            <div class="col-md-6 text-right">
+                <small>© 2025</small>
+            </div>
         </div>
     </div>
 
@@ -87,7 +97,7 @@
             e.preventDefault();
 
             $.ajax({
-                url: "<?= base_url() . "login-submit"; ?>",
+                url: "<?= base_url() . "forgot-password-submit"; ?>",
                 type: "post",
                 data: $(this).serialize(),
                 // processData: false, // tell jQuery not to process the data
@@ -112,7 +122,7 @@
                         $("#spinner").addClass("d-none");
                         toastr.success("Success!", "Hurray");
                         setTimeout(function() {
-                            window.location = '<?php echo base_url() . 'dashboard' ?>';
+                            window.location = '<?php echo base_url() ?>';
                         }, 1000);
                     } else {
                         $("#spinner").addClass("d-none");

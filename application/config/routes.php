@@ -7,3 +7,7 @@ $route['translate_uri_dashes'] = FALSE;
 
 
 $route["login-submit"] = "app/login_submit";
+$route["register"] = "app/register";
+$route["register-submit"] = "app/register_submit";
+$route["forgot-password"] = "app/forgot_password";
+$route["forgot-password-submit"] = "app/forgot_password_submit";
