@@ -16,3 +16,4 @@ $route["dashboard"] = "app/dashboard";
 $route["profile"] = "app/profile";
 $route["profile-submit"] = "app/profile_submit";
 $route["product"] = "app/product";
+$route["add-product"] = "app/add_product";

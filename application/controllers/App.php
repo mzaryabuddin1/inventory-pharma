@@ -280,4 +280,10 @@ class App extends CI_Controller
         $this->check_login(); // makes sure user_id is in session
         $this->load->view('product');
     }
+
+    public function add_product()
+    {
+        $this->check_login(); // makes sure user_id is in session
+        $this->load->view('add_product');
+    }
 }
