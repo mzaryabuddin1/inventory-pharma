@@ -44,6 +44,9 @@ class App extends CI_Controller
 
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['user_email'] = $user['email'];
+        $_SESSION['first_name'] = $user['first_name'];
+        $_SESSION['last_name'] = $user['last_name'];
+        $_SESSION['profile_picture'] = $user['profile_picture'];
 
         $success = array('success' => 1);
         print_r(json_encode($success));
@@ -188,5 +191,11 @@ class App extends CI_Controller
         session_destroy();
         redirect('welcome');
         exit;
+    }
+
+    public function profile()
+    {
+        $this->check_login();
+        $this->load->view('profile');
     }
 }
