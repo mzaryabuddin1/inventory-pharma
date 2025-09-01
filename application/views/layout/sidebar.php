@@ -25,8 +25,8 @@
               </div>
               <div class="logo-element">INV</div>
             </li>
-            <li>
-              <a href="#"
+            <li class="<?= isset($pagename) &&  $pagename == "product" ? "active" : ""  ?>">
+              <a href="<?= base_url() ?>product"
                 ><i class="fa fa-diamond"></i>
                 <span class="nav-label">Products</span></a
               >

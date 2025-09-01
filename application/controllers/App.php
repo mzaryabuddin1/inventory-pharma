@@ -195,7 +195,89 @@ class App extends CI_Controller
 
     public function profile()
     {
+        $this->check_login(); // makes sure user_id is in session
+        $user    = $this->App_model->get_user_by_email($_SESSION['user_email']);
+        if (!$user) {                                       // safety guard
+            show_error('User not found', 404);
+            return;
+        }
+        $data['user'] = $user;                              // pass to view
+        $this->load->view('profile', $data);
+    }
+
+    public function profile_submit()
+    {
         $this->check_login();
-        $this->load->view('profile');
+
+        // Base validation
+        $this->form_validation->set_rules('first_name', 'First Name', 'required|trim');
+        $this->form_validation->set_rules('last_name', 'Last Name', 'required|trim');
+        $this->form_validation->set_rules('phone', 'Phone', 'required|trim');
+
+        // Conditional password validation: only if user typed a new password
+        if ($this->input->post('new_password') !== null && $this->input->post('new_password') !== '') {
+            $this->form_validation->set_rules('new_password', 'New Password', 'trim|min_length[6]');
+        }
+
+        if ($this->form_validation->run() === FALSE) {
+            $errors = array('error' => validation_errors());
+            print_r(json_encode($errors));
+            exit;
+        }
+
+        $user_id     = $_SESSION['user_id'];
+        $information = $this->security->xss_clean($this->input->post());
+
+        // Build update data
+        $update = array(
+            'first_name' => $information['first_name'],
+            'last_name'  => $information['last_name'],
+            'phone'      => isset($information['phone']) ? $information['phone'] : null,
+            'updated_at' => date('Y-m-d H:i:s')
+        );
+
+        // Optional password update
+        if (!empty($information['new_password'])) {
+            // Keep consistent with your current login (MD5). If you move to password_hash, update login too.
+            $update['password'] = md5($information['new_password']);
+        }
+
+        // Optional profile picture upload
+        if (!empty($_FILES['profile_picture']['name'])) {
+            $config['upload_path']   =  'uploads/';
+            $config['allowed_types'] = 'jpg|jpeg|png|gif';
+            $config['encrypt_name']  = TRUE;   // avoid collisions
+            $config['max_size']      = 2048;   // 2MB
+
+            $this->load->library('upload', $config);
+
+            if (!$this->upload->do_upload('profile_picture')) {
+                $errors = array('error' => '<p>' . $this->upload->display_errors('', '') . '</p>');
+                print_r(json_encode($errors));
+                exit;
+            } else {
+                $uploadData = $this->upload->data();
+                $update['profile_picture'] = base_url() . "uploads/"  .$uploadData['file_name'];
+                $_SESSION['profile_picture'] = $update['profile_picture'];
+            }
+        }
+
+        // Persist changes
+        $ok = $this->App_model->update_user_by_id($user_id, $update);
+
+        if (!$ok) {
+            $errors = array('error' => '<p>Could not update profile. Please try again.</p>');
+            print_r(json_encode($errors));
+            exit;
+        }
+
+        $success = array('success' => 1, 'message' => 'Profile updated successfully.');
+        print_r(json_encode($success));
+    }
+
+    public function product()
+    {
+        $this->check_login(); // makes sure user_id is in session
+        $this->load->view('product');
     }
 }

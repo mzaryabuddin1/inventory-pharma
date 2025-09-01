@@ -15,6 +15,8 @@
     <link href="<?= base_url() ?>theme/css/animate.css" rel="stylesheet">
     <link href="<?= base_url() ?>theme/css/style.css" rel="stylesheet">
 
+    
+
 </head>
 
 <body>
