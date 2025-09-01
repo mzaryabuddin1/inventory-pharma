@@ -58,7 +58,7 @@
                                         <input type="number" name="tp[]" class="form-control" placeholder="TP" >
                                     </div>
                                     <div class="col-2">
-                                        <button class="btn btn-block btn-danger">-</button>
+                                        <button class="btn btn-block btn-outline-danger">-</button>
                                     </div>
                                 </div>
                                 <div class="row">
@@ -69,7 +69,7 @@
                                         <input type="number" name="tp[]" class="form-control" placeholder="TP" >
                                     </div>
                                     <div class="col-2">
-                                        <button class="btn btn-block btn-danger">-</button>
+                                        <button class="btn btn-block btn-outline-danger">-</button>
                                     </div>
                                 </div>
                             </div>
