@@ -812,7 +812,16 @@ class App extends CI_Controller
     public function purchase()
     {
         $this->check_login();
-        $this->load->view('purchase');
+
+        $products = $this->App_model->get_products();
+        $suppliers = $this->App_model->get_suppliers();
+
+        $data = [
+            'products' => $products,
+            'suppliers' => $suppliers
+        ];
+
+        $this->load->view('purchase', $data);
     }
     public function add_purchase()
     {
@@ -965,7 +974,18 @@ class App extends CI_Controller
     public function purchase_return()
     {
         $this->check_login();
-        $this->load->view('purchase_return');
+
+        $products = $this->App_model->get_products();
+        $suppliers = $this->App_model->get_suppliers();
+        $purchases = $this->App_model->get_purchases();
+
+        $data = [
+            'products' => $products,
+            'suppliers' => $suppliers,
+            'purchases' => $purchases
+        ];
+
+        $this->load->view('purchase_return', $data);
     }
     public function add_purchase_return()
     {
@@ -1114,7 +1134,16 @@ class App extends CI_Controller
     public function sales()
     {
         $this->check_login();
-        $this->load->view('sales');
+
+        $products = $this->App_model->get_products();
+        $customers = $this->App_model->get_customers();
+
+        $data = [
+            'products' => $products,
+            'customers' => $customers
+        ];
+
+        $this->load->view('sales', $data);
     }
     public function add_sale()
     {
@@ -1258,7 +1287,18 @@ class App extends CI_Controller
     public function sales_return()
     {
         $this->check_login();
-        $this->load->view('sales_return');
+
+        $products = $this->App_model->get_products();
+        $customers = $this->App_model->get_customers();
+        $invoices = $this->App_model->get_invoices();
+
+        $data = [
+            'products' => $products,
+            'customers' => $customers,
+            'invoices' => $invoices
+        ];
+
+        $this->load->view('sales_return', $data);
     }
     public function add_sales_return()
     {

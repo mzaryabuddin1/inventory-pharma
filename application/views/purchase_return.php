@@ -31,6 +31,9 @@
                                 <select name="purchase_id" class="form-control" required>
                                     <option value="1">Select purchase</option>
                                     <!-- TODO -->
+                                    <?php foreach ($purchases as $purchase) : ?>
+                                        <option value="<?= $purchase['id'] ?>"><?= $purchase['ref_no'] ?></option>  
+                                    <?php endforeach; ?>
                                 </select>
                             </div>
                             <label class="col-sm-2 col-form-label">Supplier</label>
@@ -38,6 +41,9 @@
                                 <select name="supplier_id" class="form-control" required>
                                     <option value="1">Select supplier</option>
                                     <!-- TODO -->
+                                    <?php foreach ($suppliers as $supplier) : ?>
+                                        <option value="<?= $supplier['id'] ?>"><?= $supplier['name'] ?></option>  
+                                    <?php endforeach; ?>
                                 </select>
                             </div>
                         </div>
@@ -51,6 +57,9 @@
                                     <div class="col-md-4">
                                         <select name="product_id[]" class="form-control" required>
                                             <option value="1">Select product</option>
+                                                <?php foreach ($products as $product) : ?>
+                                                    <option value="<?= $product['id'] ?>"><?= $product['product_name'] ?></option>  
+                                                <?php endforeach; ?>
                                         </select>
                                     </div>
                                     <div class="col-md-2"><input type="text" name="batch_no[]" class="form-control" placeholder="Batch No" required></div>
@@ -64,6 +73,9 @@
                                     <div class="col-md-4">
                                         <select name="product_id[]" class="form-control" required>
                                             <option value="">Select product</option>
+                                            <?php foreach ($products as $product) : ?>
+                                                    <option value="<?= $product['id'] ?>"><?= $product['product_name'] ?></option>  
+                                                <?php endforeach; ?>
                                         </select>
                                     </div>
                                     <div class="col-md-2"><input type="text" name="batch_no[]" class="form-control" placeholder="Batch No" required></div>
@@ -123,7 +135,7 @@
 
     <!-- EDIT MODAL -->
     <div class="modal fade" id="editPRModal" tabindex="-1" role="dialog" aria-hidden="true">
-        <div class="modal-dialog modal-xl" role="document">
+        <div class="modal-dialog modal-lg" role="document">
             <form id="prEditForm" class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Edit Purchase Return</h5>
@@ -145,13 +157,19 @@
                         <label class="col-sm-2 col-form-label">Original Purchase</label>
                         <div class="col-sm-4">
                             <select name="purchase_id" id="edit_pr_purchase_id" class="form-control" required>
-                                <option value="">Select purchase</option>
+                                <option value="" selected disable>Select purchase</option>
+                                <?php foreach ($purchases as $purchase) : ?>
+                                    <option value="<?= $purchase['id'] ?>"><?= $purchase['ref_no'] ?></option>  
+                                <?php endforeach; ?>
                             </select>
                         </div>
                         <label class="col-sm-2 col-form-label">Supplier</label>
                         <div class="col-sm-4">
                             <select name="supplier_id" id="edit_pr_supplier_id" class="form-control" required>
                                 <option value="">Select supplier</option>
+                                  <?php foreach ($suppliers as $supplier) : ?>
+                                        <option value="<?= $supplier['id'] ?>"><?= $supplier['name'] ?></option>  
+                                    <?php endforeach; ?>
                             </select>
                         </div>
                     </div>
@@ -164,6 +182,9 @@
                                 <div class="col-md-4">
                                     <select name="product_id[]" class="form-control" required>
                                         <option value="">Select product</option>
+                                          <?php foreach ($products as $product) : ?>
+                                            <option value="<?= $product['id'] ?>"><?= $product['product_name'] ?></option>  
+                                        <?php endforeach; ?>
                                     </select>
                                 </div>
                                 <div class="col-md-2"><input type="text" name="batch_no[]" class="form-control" placeholder="Batch No" required></div>
@@ -346,7 +367,7 @@
                         $(tpl).find('[name="product_id[]"]').val(it.product_id);
                         $(tpl).find('[name="batch_no[]"]').val(it.batch_no);
                         $(tpl).find('[name="qty[]"]').val(it.qty);
-                        $(tpl).find('[name="price[]"]').val(it.price);
+                        $(tpl).find('[name="price[]"]').val(it.price);//sss
                         $("#pr-edit-items-wrapper").append(tpl);
                     });
                 }

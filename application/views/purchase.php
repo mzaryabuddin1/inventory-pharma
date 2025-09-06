@@ -32,6 +32,9 @@
                 <select name="supplier_id" class="form-control" required>
                   <option value="1">Select supplier</option>
                   <!-- TODO: populate with your suppliers -->
+                    <?php foreach ($suppliers as $supplier) : ?>
+                      <option value="<?= $supplier['id'] ?>"><?= $supplier['name'] ?></option>  
+                    <?php endforeach; ?>
                 </select>
               </div>
             </div>
@@ -47,6 +50,9 @@
                     <select name="product_id[]" class="form-control" required>
                       <option value="1">Select product</option>
                       <!-- TODO: populate products -->
+                        <?php foreach ($products as $product) : ?>
+                          <option value="<?= $product['id'] ?>"><?= $product['product_name'] ?></option>  
+                        <?php endforeach; ?>
                     </select>
                   </div>
                   <div class="col-md-2"><input type="text" name="batch_no[]" class="form-control" placeholder="Batch No" required></div>
@@ -61,6 +67,9 @@
                     <select name="product_id[]" class="form-control" required>
                       <option value="1">Select product</option>
                       <!-- TODO: populate products -->
+                        <?php foreach ($products as $product) : ?>
+                          <option value="<?= $product['id'] ?>"><?= $product['product_name'] ?></option>  
+                        <?php endforeach; ?>
                     </select>
                   </div>
                   <div class="col-md-2"><input type="text" name="batch_no[]" class="form-control" placeholder="Batch No" required></div>
@@ -116,7 +125,7 @@
 
   <!-- EDIT MODAL -->
   <div class="modal fade" id="editPurchaseModal" tabindex="-1" role="dialog" aria-hidden="true">
-    <div class="modal-dialog modal-xl" role="document">
+    <div class="modal-dialog modal-lg" role="document">
       <form id="purchaseEditForm" class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title">Edit Purchase</h5>
@@ -140,7 +149,9 @@
             <div class="col-sm-10">
               <select name="supplier_id" id="edit_supplier_id" class="form-control" required>
                 <option >Select supplier</option>  
-                <option value="1">XXXXXX</option>  
+                  <?php foreach ($suppliers as $supplier) : ?>
+                    <option value="<?= $supplier['id'] ?>"><?= $supplier['name'] ?></option>  
+                  <?php endforeach; ?>  
                 <!-- TODO: populate -->
               </select>
             </div>
@@ -155,7 +166,9 @@
                 <div class="col-md-4">
                   <select name="product_id[]" class="form-control" required>
                     <option >Select product</option>
-                    <option value="1">XXXXX</option>
+                      <?php foreach ($products as $product) : ?>
+                        <option value="<?= $product['id'] ?>"><?= $product['product_name'] ?></option>  
+                      <?php endforeach; ?>
                   </select>
                 </div>
                 <div class="col-md-2"><input type="text" name="batch_no[]" class="form-control" placeholder="Batch No" required></div>

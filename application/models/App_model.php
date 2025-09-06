@@ -425,7 +425,7 @@ class App_model extends CI_Model
     if (!in_array($order_by, $safe, true)) $order_by = 'return_date';
     $this->db->order_by($order_by, $order_dir);
     if ($length > 0) $this->db->limit($length, $start);
-
+    $this->db->where('created_by', $_SESSION['user_id']);
     $rows = $this->db->get()->result_array();
     return ['total' => $total, 'filtered' => $filtered, 'rows' => $rows];
   }
@@ -498,7 +498,7 @@ class App_model extends CI_Model
     if (!in_array($order_by, $safe, true)) $order_by = 'sale_date';
     $this->db->order_by($order_by, $order_dir);
     if ($length > 0) $this->db->limit($length, $start);
-
+    $this->db->where('created_by', $_SESSION['user_id']);
     $rows = $this->db->get()->result_array();
     return ['total' => $total, 'filtered' => $filtered, 'rows' => $rows];
   }
@@ -571,7 +571,7 @@ class App_model extends CI_Model
     if (!in_array($order_by, $safe, true)) $order_by = 'return_date';
     $this->db->order_by($order_by, $order_dir);
     if ($length > 0) $this->db->limit($length, $start);
-
+    $this->db->where('created_by', $_SESSION['user_id']);
     $rows = $this->db->get()->result_array();
     return ['total' => $total, 'filtered' => $filtered, 'rows' => $rows];
   }
@@ -673,6 +673,26 @@ public function insert_ledger($data) {
 public function delete_ledger_by_payment($payment_id) {
   $this->db->where(['ref_type'=>'payment','ref_id'=>(int)$payment_id])->delete('ledger');
   return $this->db->affected_rows();
+}
+
+public function get_products() {
+  return $this->db->get_where('products', array('created_by' => $_SESSION['user_id']))->result_array();
+}
+
+public function get_suppliers() {
+  return $this->db->get_where('suppliers', array('created_by' => $_SESSION['user_id']))->result_array();
+}
+
+public function get_purchases() {
+  return $this->db->get_where('purchases', array('created_by' => $_SESSION['user_id']))->result_array();
+}
+
+public function get_customers() {
+  return $this->db->get_where('customers', array('created_by' => $_SESSION['user_id']))->result_array();
+}
+
+public function get_invoices() {
+  return $this->db->get_where('sales', array('created_by' => $_SESSION['user_id']))->result_array();
 }
 
 }

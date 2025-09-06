@@ -35,6 +35,9 @@
                 <select name="customer_id" class="form-control" required>
                   <option value="1">Select customer</option>
                   <!-- TODO: populate customers -->
+                    <?php foreach ($customers as $customer) : ?>
+                      <option value="<?= $customer['id'] ?>"><?= $customer['name'] ?></option>  
+                    <?php endforeach; ?>
                 </select>
               </div>
             </div>
@@ -50,6 +53,9 @@
                     <select name="product_id[]" class="form-control" required>
                       <option value="1">Select product</option>
                       <!-- TODO: populate products -->
+                        <?php foreach ($products as $product) : ?>
+                        <option value="<?= $product['id'] ?>"><?= $product['product_name'] ?></option>  
+                      <?php endforeach; ?>
                     </select>
                   </div>
                   <div class="col-md-2">
@@ -126,7 +132,7 @@
 
   <!-- EDIT MODAL -->
   <div class="modal fade" id="editSaleModal" tabindex="-1" role="dialog" aria-hidden="true">
-    <div class="modal-dialog modal-xl" role="document">
+    <div class="modal-dialog modal-lg" role="document">
       <form id="saleEditForm" class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title">Edit Invoice</h5>
@@ -150,6 +156,9 @@
               <select name="customer_id" id="edit_customer_id" class="form-control" required>
                 <option value="">Select customer</option>
                 <!-- TODO -->
+                   <?php foreach ($customers as $customer) : ?>
+                      <option value="<?= $customer['id'] ?>"><?= $customer['name'] ?></option>  
+                    <?php endforeach; ?>
               </select>
             </div>
           </div>
@@ -164,6 +173,9 @@
                 <div class="col-md-4">
                   <select name="product_id[]" class="form-control" required>
                     <option value="">Select product</option>
+                      <?php foreach ($products as $product) : ?>
+                        <option value="<?= $product['id'] ?>"><?= $product['product_name'] ?></option>  
+                      <?php endforeach; ?>
                   </select>
                 </div>
                 <div class="col-md-2"><input type="text" name="batch_no[]" class="form-control" placeholder="Batch No" required></div>

@@ -30,6 +30,9 @@
               <div class="col-sm-4">
                 <select name="sale_id" class="form-control" required>
                   <option value="1">Select invoice</option>
+                     <?php foreach ($invoices as $invoice) : ?>
+                      <option value="<?= $invoice['id'] ?>"><?= $invoice['invoice_no'] ?></option>  
+                    <?php endforeach; ?>
                   <!-- TODO -->
                 </select>
               </div>
@@ -37,6 +40,9 @@
               <div class="col-sm-4">
                 <select name="customer_id" class="form-control" required>
                   <option value="1">Select customer</option>
+                  <?php foreach ($customers as $customer) : ?>
+                    <option value="<?= $customer['id'] ?>"><?= $customer['name'] ?></option>  
+                  <?php endforeach; ?>
                   <!-- TODO -->
                 </select>
               </div>
@@ -51,6 +57,9 @@
                   <div class="col-md-4">
                     <select name="product_id[]" class="form-control" required>
                       <option value="1">Select product</option>
+                       <?php foreach ($products as $product) : ?>
+                      <option value="<?= $product['id'] ?>"><?= $product['product_name'] ?></option>  
+                    <?php endforeach; ?>
                     </select>
                   </div>
                   <div class="col-md-2"><input type="text" name="batch_no[]" class="form-control" placeholder="Batch No" required></div>
@@ -64,6 +73,9 @@
                   <div class="col-md-4">
                     <select name="product_id[]" class="form-control" required>
                       <option value="">Select product</option>
+                            <?php foreach ($products as $product) : ?>
+                      <option value="<?= $product['id'] ?>"><?= $product['product_name'] ?></option>  
+                    <?php endforeach; ?>
                     </select>
                   </div>
                   <div class="col-md-2"><input type="text" name="batch_no[]" class="form-control" placeholder="Batch No" required></div>
@@ -119,7 +131,7 @@
 
   <!-- EDIT MODAL -->
   <div class="modal fade" id="editSRModal" tabindex="-1" role="dialog" aria-hidden="true">
-    <div class="modal-dialog modal-xl" role="document">
+    <div class="modal-dialog modal-lg" role="document">
       <form id="srEditForm" class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title">Edit Sales Return</h5>
@@ -142,12 +154,18 @@
             <div class="col-sm-4">
               <select name="sale_id" id="edit_sr_sale_id" class="form-control" required>
                 <option value="">Select invoice</option>
+                 <?php foreach ($invoices as $invoice) : ?>
+                      <option value="<?= $invoice['id'] ?>"><?= $invoice['invoice_no'] ?></option>  
+                    <?php endforeach; ?>
               </select>
             </div>
             <label class="col-sm-2 col-form-label">Customer</label>
             <div class="col-sm-4">
               <select name="customer_id" id="edit_sr_customer_id" class="form-control" required>
                 <option value="">Select customer</option>
+                  <?php foreach ($customers as $customer) : ?>
+                    <option value="<?= $customer['id'] ?>"><?= $customer['name'] ?></option>  
+                  <?php endforeach; ?>
               </select>
             </div>
           </div>
@@ -162,6 +180,9 @@
                 <div class="col-md-4">
                   <select name="product_id[]" class="form-control" required>
                     <option value="">Select product</option>
+                          <?php foreach ($products as $product) : ?>
+                      <option value="<?= $product['id'] ?>"><?= $product['product_name'] ?></option>  
+                    <?php endforeach; ?>
                   </select>
                 </div>
                 <div class="col-md-2"><input type="text" name="batch_no[]" class="form-control" placeholder="Batch No" required></div>
