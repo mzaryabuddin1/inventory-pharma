@@ -452,7 +452,7 @@ class App extends CI_Controller
         // image (optional)
         $image_filename = $row['image'];
         if (!empty($_FILES['image']['name'])) {
-     
+
             if (!$this->upload->do_upload('image')) {
                 echo json_encode(['error' => '<p>' . $this->upload->display_errors('', '') . '</p>']);
                 return;
@@ -476,4 +476,318 @@ class App extends CI_Controller
 
         echo json_encode(['success' => 1, 'message' => 'Product updated']);
     }
+
+    public function supplier()
+    {
+        $this->check_login();
+        $this->load->view('supplier'); // view below
+    }
+
+    public function add_supplier()
+    {
+        $this->check_login();
+        $this->load->view('add_supplier'); // optional separate add page; you can skip if not needed
+    }
+
+
+    public function add_supplier_submit()
+    {
+        $this->check_login();
+
+        $this->form_validation->set_rules('name',  'Name',  'required|trim');
+        $this->form_validation->set_rules('email', 'Email', 'trim|valid_email');
+        $this->form_validation->set_rules('phone', 'Phone', 'trim');
+
+        if ($this->form_validation->run() === FALSE) {
+            echo json_encode(['error' => validation_errors()]);
+            return;
+        }
+
+        $p = $this->security->xss_clean($this->input->post());
+        $user_id = $_SESSION['user_id'];
+
+        // optional logo upload ("logo" input)
+        $logo_url = null;
+        if (!empty($_FILES['logo']['name'])) {
+            // reuse constructor config
+            $this->upload->initialize($this->file_config);
+            if (!$this->upload->do_upload('logo')) {
+                echo json_encode(['error' => '<p>' . $this->upload->display_errors('', '') . '</p>']);
+                return;
+            }
+            $logo_url = base_url() . 'uploads/' . $this->upload->data('file_name'); // full URL (consistent with your product)
+        }
+
+        $data = [
+            'name'       => $p['name'],
+            'email'      => $p['email'] ?? null,
+            'phone'      => $p['phone'] ?? null,
+            'address'    => $p['address'] ?? null,
+            'logo'       => $logo_url ?: 'https://static.vecteezy.com/system/resources/thumbnails/000/546/318/small/diamond_002.jpg',
+            'status'     => 1,
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s'),
+            'created_by' => $user_id
+        ];
+
+        $insert_id = $this->App_model->insert_supplier($data);
+        if (!$insert_id) {
+            echo json_encode(['error' => '<p>Could not save supplier. Please try again.</p>']);
+            return;
+        }
+
+        echo json_encode(['success' => 1, 'message' => 'Supplier added successfully.', 'id' => $insert_id]);
+    }
+
+
+    public function suppliers_list()
+    {
+        $this->check_login();
+
+        $draw    = (int)$this->input->post('draw');
+        $start   = (int)$this->input->post('start');
+        $length  = (int)$this->input->post('length');
+        $search  = $this->input->post('search')['value'] ?? '';
+
+        $order     = $this->input->post('order')[0] ?? null;
+        $columns   = $this->input->post('columns') ?? [];
+        $order_by  = 'name';
+        $order_dir = 'asc';
+
+        if ($order) {
+            $colIdx    = (int)$order['column'];
+            $order_dir = strtolower($order['dir']) === 'desc' ? 'desc' : 'asc';
+            $safeMap   = ['logo', 'name', 'email', 'phone', 'address', 'status', 'created_at', 'id'];
+            $colKey    = $columns[$colIdx]['data'] ?? 'name';
+            $order_by  = in_array($colKey, $safeMap, true) ? $colKey : 'name';
+        }
+
+        $result = $this->App_model->datatable_suppliers($start, $length, $search, $order_by, $order_dir);
+
+        echo json_encode([
+            'draw'            => $draw,
+            'recordsTotal'    => $result['total'],
+            'recordsFiltered' => $result['filtered'],
+            'data'            => $result['rows'],
+        ]);
+    }
+
+
+    public function get_supplier($id)
+    {
+        $this->check_login();
+        $id = (int)$id;
+        if (!$id) {
+            echo json_encode(['error' => '<p>Invalid id</p>']);
+            return;
+        }
+
+        $row = $this->App_model->get_supplier($id);
+        if (!$row) {
+            echo json_encode(['error' => '<p>Supplier not found</p>']);
+            return;
+        }
+
+        echo json_encode(['success' => 1, 'data' => $row]); // logo is already a full URL
+    }
+
+
+    public function update_supplier_submit()
+    {
+        $this->check_login();
+
+        $this->form_validation->set_rules('supplier_id', 'Supplier', 'required|integer');
+        $this->form_validation->set_rules('name',        'Name',     'required|trim');
+        $this->form_validation->set_rules('email',       'Email',    'trim|valid_email');
+
+        if ($this->form_validation->run() === FALSE) {
+            echo json_encode(['error' => validation_errors()]);
+            return;
+        }
+
+        $p  = $this->security->xss_clean($this->input->post());
+        $id = (int)$p['supplier_id'];
+
+        $row = $this->App_model->get_supplier($id);
+        if (!$row) {
+            echo json_encode(['error' => '<p>Supplier not found</p>']);
+            return;
+        }
+
+        // optional new logo
+        $logo_url = $row['logo'];
+        if (!empty($_FILES['logo']['name'])) {
+            $this->upload->initialize($this->file_config);
+            if (!$this->upload->do_upload('logo')) {
+                echo json_encode(['error' => '<p>' . $this->upload->display_errors('', '') . '</p>']);
+                return;
+            }
+            $logo_url = base_url() . 'uploads/' . $this->upload->data('file_name');
+        }
+
+        $data = [
+            'name'       => $p['name'],
+            'email'      => $p['email'] ?? null,
+            'phone'      => $p['phone'] ?? null,
+            'address'    => $p['address'] ?? null,
+            'logo'       => $logo_url,
+            'updated_at' => date('Y-m-d H:i:s'),
+        ];
+
+        $ok = $this->App_model->update_supplier_by_id($id, $data);
+        if (!$ok) {
+            echo json_encode(['error' => '<p>Could not update supplier</p>']);
+            return;
+        }
+
+        echo json_encode(['success' => 1, 'message' => 'Supplier updated']);
+    }
+
+
+public function customer()
+{
+    $this->check_login();
+    $this->load->view('customer'); // view below
+}
+
+public function add_customer()
+{
+    $this->check_login();
+    $this->load->view('add_customer'); // optional separate page (you can skip)
+}
+
+
+public function add_customer_submit()
+{
+    $this->check_login();
+
+    $this->form_validation->set_rules('name',  'Name',  'required|trim');
+    $this->form_validation->set_rules('email', 'Email', 'trim|valid_email');
+    $this->form_validation->set_rules('phone', 'Phone', 'trim');
+
+    if ($this->form_validation->run() === FALSE) {
+        echo json_encode(['error' => validation_errors()]); return;
+    }
+
+    $p = $this->security->xss_clean($this->input->post());
+    $user_id = $_SESSION['user_id'];
+
+    // optional avatar upload ("avatar" input)
+    $avatar_url = null;
+    if (!empty($_FILES['avatar']['name'])) {
+        $this->upload->initialize($this->file_config);
+        if (!$this->upload->do_upload('avatar')) {
+            echo json_encode(['error' => '<p>'.$this->upload->display_errors('', '').'</p>']); return;
+        }
+        $avatar_url = base_url().'uploads/'.$this->upload->data('file_name'); // full URL (consistent)
+    }
+
+    $data = [
+        'name'       => $p['name'],
+        'email'      => $p['email'] ?? null,
+        'phone'      => $p['phone'] ?? null,
+        'address'    => $p['address'] ?? null,
+        'avatar'     => $avatar_url ?: 'https://static.vecteezy.com/system/resources/thumbnails/000/546/318/small/diamond_002.jpg',
+        'status'     => 1,
+        'created_at' => date('Y-m-d H:i:s'),
+        'updated_at' => date('Y-m-d H:i:s'),
+        'created_by' => $user_id
+    ];
+
+    $insert_id = $this->App_model->insert_customer($data);
+    if (!$insert_id) { echo json_encode(['error' => '<p>Could not save customer. Please try again.</p>']); return; }
+
+    echo json_encode(['success' => 1, 'message' => 'Customer added successfully.', 'id' => $insert_id]);
+}
+
+
+public function customers_list()
+{
+    $this->check_login();
+
+    $draw    = (int)$this->input->post('draw');
+    $start   = (int)$this->input->post('start');
+    $length  = (int)$this->input->post('length');
+    $search  = $this->input->post('search')['value'] ?? '';
+
+    $order     = $this->input->post('order')[0] ?? null;
+    $columns   = $this->input->post('columns') ?? [];
+    $order_by  = 'name';
+    $order_dir = 'asc';
+
+    if ($order) {
+        $colIdx    = (int)$order['column'];
+        $order_dir = strtolower($order['dir']) === 'desc' ? 'desc' : 'asc';
+        $safeMap   = ['avatar','name','email','phone','address','status','created_at','id'];
+        $colKey    = $columns[$colIdx]['data'] ?? 'name';
+        $order_by  = in_array($colKey, $safeMap, true) ? $colKey : 'name';
+    }
+
+    $result = $this->App_model->datatable_customers($start, $length, $search, $order_by, $order_dir);
+
+    echo json_encode([
+        'draw'            => $draw,
+        'recordsTotal'    => $result['total'],
+        'recordsFiltered' => $result['filtered'],
+        'data'            => $result['rows'],
+    ]);
+}
+
+
+public function get_customer($id)
+{
+    $this->check_login();
+    $id = (int)$id;
+    if (!$id) { echo json_encode(['error' => '<p>Invalid id</p>']); return; }
+
+    $row = $this->App_model->get_customer($id);
+    if (!$row) { echo json_encode(['error' => '<p>Customer not found</p>']); return; }
+
+    echo json_encode(['success' => 1, 'data' => $row]); // avatar already full URL
+}
+
+
+public function update_customer_submit()
+{
+    $this->check_login();
+
+    $this->form_validation->set_rules('customer_id', 'Customer', 'required|integer');
+    $this->form_validation->set_rules('name',        'Name',     'required|trim');
+    $this->form_validation->set_rules('email',       'Email',    'trim|valid_email');
+
+    if ($this->form_validation->run() === FALSE) {
+        echo json_encode(['error' => validation_errors()]); return;
+    }
+
+    $p  = $this->security->xss_clean($this->input->post());
+    $id = (int)$p['customer_id'];
+
+    $row = $this->App_model->get_customer($id);
+    if (!$row) { echo json_encode(['error' => '<p>Customer not found</p>']); return; }
+
+    // optional new avatar
+    $avatar_url = $row['avatar'];
+    if (!empty($_FILES['avatar']['name'])) {
+        $this->upload->initialize($this->file_config);
+        if (!$this->upload->do_upload('avatar')) {
+            echo json_encode(['error' => '<p>'.$this->upload->display_errors('', '').'</p>']); return;
+        }
+        $avatar_url = base_url().'uploads/'.$this->upload->data('file_name');
+    }
+
+    $data = [
+        'name'       => $p['name'],
+        'email'      => $p['email'] ?? null,
+        'phone'      => $p['phone'] ?? null,
+        'address'    => $p['address'] ?? null,
+        'avatar'     => $avatar_url,
+        'updated_at' => date('Y-m-d H:i:s'),
+    ];
+
+    $ok = $this->App_model->update_customer_by_id($id, $data);
+    if (!$ok) { echo json_encode(['error' => '<p>Could not update customer</p>']); return; }
+
+    echo json_encode(['success' => 1, 'message' => 'Customer updated']);
+}
+
 }

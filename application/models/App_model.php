@@ -138,8 +138,125 @@ class App_model extends CI_Model
   }
 
   public function product_update_by_id($id, $data)
-{
+  {
     $this->db->where('id', (int)$id);
     return $this->db->update('products', $data);
+  }
+
+
+  public function insert_supplier($data)
+  {
+    $this->db->insert('suppliers', $data);
+    return $this->db->insert_id();
+  }
+
+  public function get_supplier($id)
+  {
+    return $this->db->get_where('suppliers', ['id' => (int)$id])->row_array();
+  }
+
+  public function update_supplier_by_id($id, $data)
+  {
+    $this->db->where('id', (int)$id);
+    return $this->db->update('suppliers', $data);
+  }
+
+  /* DataTables server-side for suppliers */
+  public function datatable_suppliers($start, $length, $search, $order_by, $order_dir)
+  {
+    $table = 'suppliers';
+
+    // total
+    $total = $this->db->count_all($table);
+
+    // base + search (keep builder alive)
+    $this->db->from($table);
+    if ($search !== '') {
+      $this->db->group_start()
+        ->like('name', $search)
+        ->or_like('email', $search)
+        ->or_like('phone', $search)
+        ->or_like('address', $search)
+        ->or_like('created_at', $search)
+        ->group_end();
+    }
+
+    $filtered = $this->db->count_all_results('', FALSE); // don't reset builder
+
+    // select + order + limit
+    $this->db->select('id, logo, name, email, phone, address, status, created_at');
+    $safe = ['id', 'logo', 'name', 'email', 'phone', 'address', 'status', 'created_at'];
+    if (!in_array($order_by, $safe, true)) $order_by = 'name';
+    $order_dir = strtolower($order_dir) === 'desc' ? 'desc' : 'asc';
+    $this->db->order_by($order_by, $order_dir);
+
+    if ($length > 0) $this->db->limit($length, $start);
+
+    $rows = $this->db->get()->result_array();
+
+    return [
+      'total'    => $total,
+      'filtered' => $filtered,
+      'rows'     => $rows,
+    ];
+  }
+
+
+public function insert_customer($data)
+{
+    $this->db->insert('customers', $data);
+    return $this->db->insert_id();
 }
+
+public function get_customer($id)
+{
+    return $this->db->get_where('customers', ['id' => (int)$id])->row_array();
+}
+
+public function update_customer_by_id($id, $data)
+{
+    $this->db->where('id', (int)$id);
+    return $this->db->update('customers', $data);
+}
+
+/* DataTables server-side for customers */
+public function datatable_customers($start, $length, $search, $order_by, $order_dir)
+{
+    $table = 'customers';
+
+    // total
+    $total = $this->db->count_all($table);
+
+    // base + search (keep builder alive)
+    $this->db->from($table);
+    if ($search !== '') {
+        $this->db->group_start()
+                 ->like('name', $search)
+                 ->or_like('email', $search)
+                 ->or_like('phone', $search)
+                 ->or_like('address', $search)
+                 ->or_like('created_at', $search)
+                 ->group_end();
+    }
+
+    $filtered = $this->db->count_all_results('', FALSE); // don't reset
+
+    // select + order + limit
+    $this->db->select('id, avatar, name, email, phone, address, status, created_at');
+    $safe = ['id','avatar','name','email','phone','address','status','created_at'];
+    if (!in_array($order_by, $safe, true)) $order_by = 'name';
+    $order_dir = strtolower($order_dir) === 'desc' ? 'desc' : 'asc';
+    $this->db->order_by($order_by, $order_dir);
+
+    if ($length > 0) $this->db->limit($length, $start);
+
+    $rows = $this->db->get()->result_array();
+
+    return [
+        'total'    => $total,
+        'filtered' => $filtered,
+        'rows'     => $rows,
+    ];
+}
+
 }

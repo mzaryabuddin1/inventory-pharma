@@ -31,15 +31,15 @@
                 <span class="nav-label">Products</span></a
               >
             </li>
-            <li>
-              <a href="#"
-                ><i class="fa fa-diamond"></i>
+            <li class="<?= isset($pagename) &&  $pagename == "supplier" ? "active" : ""  ?>">
+               <a href="<?= base_url() ?>supplier"
+                ><i class="fa fa-truck"></i>
                 <span class="nav-label">Suppliers</span></a
               >
             </li>
-            <li>
-              <a href="#"
-                ><i class="fa fa-diamond"></i>
+            <li class="<?= isset($pagename) &&  $pagename == "customer" ? "active" : ""  ?>">
+               <a href="<?= base_url() ?>customer"
+                ><i class="fa fa-users"></i>
                 <span class="nav-label">Customers</span></a
               >
             </li>
