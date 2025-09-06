@@ -3,6 +3,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 class App extends CI_Controller
 {
+    public $file_config;
 
     public function __construct()
     {
@@ -10,6 +11,12 @@ class App extends CI_Controller
         date_default_timezone_set('Asia/Karachi');
         $this->load->model('App_model');
         $this->load->library('emailsender');
+
+        $this->file_config['upload_path']   = 'uploads/';
+        $this->file_config['allowed_types'] = 'jpg|jpeg|png|gif';
+        $this->file_config['encrypt_name']  = TRUE;
+        $this->file_config['max_size']      = 4096; // 4MB
+        $this->load->library('upload', $this->file_config);
     }
 
 
@@ -244,20 +251,13 @@ class App extends CI_Controller
 
         // Optional profile picture upload
         if (!empty($_FILES['profile_picture']['name'])) {
-            $config['upload_path']   =  'uploads/';
-            $config['allowed_types'] = 'jpg|jpeg|png|gif';
-            $config['encrypt_name']  = TRUE;   // avoid collisions
-            $config['max_size']      = 2048;   // 2MB
-
-            $this->load->library('upload', $config);
-
             if (!$this->upload->do_upload('profile_picture')) {
                 $errors = array('error' => '<p>' . $this->upload->display_errors('', '') . '</p>');
                 print_r(json_encode($errors));
                 exit;
             } else {
                 $uploadData = $this->upload->data();
-                $update['profile_picture'] = base_url() . "uploads/"  .$uploadData['file_name'];
+                $update['profile_picture'] = base_url() . "uploads/"  . $uploadData['file_name'];
                 $_SESSION['profile_picture'] = $update['profile_picture'];
             }
         }
@@ -285,5 +285,195 @@ class App extends CI_Controller
     {
         $this->check_login(); // makes sure user_id is in session
         $this->load->view('add_product');
+    }
+
+    public function add_product_submit()
+    {
+        $this->check_login();
+
+        // Validation
+        $this->form_validation->set_rules('product_name', 'Product Name', 'required|trim');
+        $this->form_validation->set_rules('generic', 'Generic', 'trim');
+
+        if ($this->form_validation->run() === FALSE) {
+            $errors = array('error' => validation_errors());
+            print_r(json_encode($errors));
+            exit;
+        }
+
+        // Clean input
+        $information = $this->security->xss_clean($this->input->post());
+        $user_id     = $_SESSION['user_id'];
+
+        // Decode prices JSON: [{"dated":"2025-09-02 14:00:00","mrp":100,"tp":30}]
+        $prices = [];
+        if (!empty($information['prices'])) {
+            $decoded = json_decode($information['prices'], true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                $prices = $decoded;
+            } else {
+                $errors = array('error' => '<p>Invalid prices payload.</p>');
+                print_r(json_encode($errors));
+                exit;
+            }
+        } else {
+            $errors = array('error' => '<p>Please add at least one price row.</p>');
+            print_r(json_encode($errors));
+            exit;
+        }
+
+        // Optional product image upload (field name="image")
+        $image_filename = null;
+        if (!empty($_FILES['image']['name'])) {
+
+            if (!$this->upload->do_upload('image')) {
+                $errors = array('error' => '<p>' . $this->upload->display_errors('', '') . '</p>');
+                print_r(json_encode($errors));
+                exit;
+            } else {
+                $uploadData     = $this->upload->data();
+                $image_filename = $uploadData['file_name'];
+            }
+        }
+
+        // Prepare insert data
+        $data = array(
+            'product_name' => $information['product_name'],
+            'generic'      => isset($information['generic']) ? $information['generic'] : null,
+            'prices'       => json_encode($prices), // store as JSON
+            'image'        => $image_filename ? base_url() . "uploads/" .  $image_filename : "https://static.vecteezy.com/system/resources/thumbnails/000/546/318/small/diamond_002.jpg",      // just filename; build URL when displaying
+            'created_at'   => date('Y-m-d H:i:s'),
+            'updated_at'   => date('Y-m-d H:i:s'),
+            'created_by'   => $user_id
+        );
+
+        // Save
+        $insert_id = $this->App_model->insert_product($data);
+
+        if (!$insert_id) {
+            $errors = array('error' => '<p>Could not save product. Please try again.</p>');
+            print_r(json_encode($errors));
+            exit;
+        }
+
+        $success = array('success' => 1, 'message' => 'Product added successfully.', 'id' => $insert_id);
+        print_r(json_encode($success));
+    }
+
+    public function products_list()
+    {
+        $this->check_login();
+
+        $draw    = (int)$this->input->post('draw');
+        $start   = (int)$this->input->post('start');
+        $length  = (int)$this->input->post('length');
+        $search  = $this->input->post('search')['value'] ?? '';
+
+        $order     = $this->input->post('order')[0] ?? null;
+        $columns   = $this->input->post('columns') ?? [];
+        $order_by  = 'product_name';
+        $order_dir = 'asc';
+
+        if ($order) {
+            $colIdx   = (int)$order['column'];
+            $order_dir = strtolower($order['dir']) === 'desc' ? 'desc' : 'asc';
+            // allow only known columns in the expanded shape
+            $safeMap  = ['image', 'product_name', 'generic', 'dated', 'mrp', 'tp', 'created_at', 'id'];
+            $colKey   = $columns[$colIdx]['data'] ?? 'product_name';
+            $order_by = in_array($colKey, $safeMap, true) ? $colKey : 'product_name';
+        }
+
+        $result = $this->App_model->datatable_products($start, $length, $search, $order_by, $order_dir);
+
+        echo json_encode([
+            'draw'            => $draw,
+            'recordsTotal'    => $result['total'],
+            'recordsFiltered' => $result['filtered'],
+            'data'            => $result['rows'],
+        ]);
+    }
+
+    public function get_product($id)
+    {
+        $this->check_login();
+        $id = (int)$id;
+        if (!$id) {
+            echo json_encode(['error' => '<p>Invalid id</p>']);
+            return;
+        }
+
+        $row = $this->App_model->get_product($id);
+        if (!$row) {
+            echo json_encode(['error' => '<p>Product not found</p>']);
+            return;
+        }
+
+        $row['image_url'] = (!empty($row['image']) && strpos($row['image'], 'http') !== 0)
+            ? base_url() . 'uploads/' . $row['image']
+            : ($row['image'] ?? null);
+
+        $row['prices'] = $row['prices'] ? json_decode($row['prices'], true) : [];
+        echo json_encode(['success' => 1, 'data' => $row]);
+    }
+
+    public function update_product_submit()
+    {
+        $this->check_login();
+
+        $this->form_validation->set_rules('product_id', 'Product', 'required|integer');
+        $this->form_validation->set_rules('product_name', 'Product Name', 'required|trim');
+        $this->form_validation->set_rules('generic', 'Generic', 'trim');
+
+        if ($this->form_validation->run() === FALSE) {
+            echo json_encode(['error' => validation_errors()]);
+            return;
+        }
+
+        $p  = $this->security->xss_clean($this->input->post());
+        $id = (int)$p['product_id'];
+
+        $row = $this->App_model->get_product($id);
+        if (!$row) {
+            echo json_encode(['error' => '<p>Product not found</p>']);
+            return;
+        }
+
+        // prices
+        $prices = [];
+        if (!empty($p['prices'])) {
+            $decoded = json_decode($p['prices'], true);
+            if (!is_array($decoded)) {
+                echo json_encode(['error' => '<p>Invalid prices payload</p>']);
+                return;
+            }
+            $prices = $decoded;
+        }
+
+        // image (optional)
+        $image_filename = $row['image'];
+        if (!empty($_FILES['image']['name'])) {
+     
+            if (!$this->upload->do_upload('image')) {
+                echo json_encode(['error' => '<p>' . $this->upload->display_errors('', '') . '</p>']);
+                return;
+            }
+            $image_filename = base_url() . "uploads/" . $this->upload->data('file_name');
+        }
+
+        $data = [
+            'product_name' => $p['product_name'],
+            'generic'      => $p['generic'] ?? null,
+            'prices'       => json_encode($prices),
+            'image'        => $image_filename,
+            'updated_at'   => date('Y-m-d H:i:s'),
+        ];
+
+        $ok = $this->App_model->product_update_by_id($id, $data);
+        if (!$ok) {
+            echo json_encode(['error' => '<p>Could not update product</p>']);
+            return;
+        }
+
+        echo json_encode(['success' => 1, 'message' => 'Product updated']);
     }
 }

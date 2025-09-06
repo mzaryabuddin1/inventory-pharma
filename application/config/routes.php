@@ -17,3 +17,7 @@ $route["profile"] = "app/profile";
 $route["profile-submit"] = "app/profile_submit";
 $route["product"] = "app/product";
 $route["add-product"] = "app/add_product";
+$route["add-product-submit"] = "app/add_product_submit";
+$route["products-list"] = "app/products_list";
+$route["product/(:num)"] = "app/get_product/$1";
+$route["product-update"] = "app/update_product_submit";
