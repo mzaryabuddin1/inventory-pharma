@@ -644,150 +644,983 @@ class App extends CI_Controller
     }
 
 
-public function customer()
-{
-    $this->check_login();
-    $this->load->view('customer'); // view below
-}
-
-public function add_customer()
-{
-    $this->check_login();
-    $this->load->view('add_customer'); // optional separate page (you can skip)
-}
-
-
-public function add_customer_submit()
-{
-    $this->check_login();
-
-    $this->form_validation->set_rules('name',  'Name',  'required|trim');
-    $this->form_validation->set_rules('email', 'Email', 'trim|valid_email');
-    $this->form_validation->set_rules('phone', 'Phone', 'trim');
-
-    if ($this->form_validation->run() === FALSE) {
-        echo json_encode(['error' => validation_errors()]); return;
+    public function customer()
+    {
+        $this->check_login();
+        $this->load->view('customer'); // view below
     }
 
-    $p = $this->security->xss_clean($this->input->post());
-    $user_id = $_SESSION['user_id'];
+    public function add_customer()
+    {
+        $this->check_login();
+        $this->load->view('add_customer'); // optional separate page (you can skip)
+    }
 
-    // optional avatar upload ("avatar" input)
-    $avatar_url = null;
-    if (!empty($_FILES['avatar']['name'])) {
-        $this->upload->initialize($this->file_config);
-        if (!$this->upload->do_upload('avatar')) {
-            echo json_encode(['error' => '<p>'.$this->upload->display_errors('', '').'</p>']); return;
+
+    public function add_customer_submit()
+    {
+        $this->check_login();
+
+        $this->form_validation->set_rules('name',  'Name',  'required|trim');
+        $this->form_validation->set_rules('email', 'Email', 'trim|valid_email');
+        $this->form_validation->set_rules('phone', 'Phone', 'trim');
+
+        if ($this->form_validation->run() === FALSE) {
+            echo json_encode(['error' => validation_errors()]);
+            return;
         }
-        $avatar_url = base_url().'uploads/'.$this->upload->data('file_name'); // full URL (consistent)
-    }
 
-    $data = [
-        'name'       => $p['name'],
-        'email'      => $p['email'] ?? null,
-        'phone'      => $p['phone'] ?? null,
-        'address'    => $p['address'] ?? null,
-        'avatar'     => $avatar_url ?: 'https://static.vecteezy.com/system/resources/thumbnails/000/546/318/small/diamond_002.jpg',
-        'status'     => 1,
-        'created_at' => date('Y-m-d H:i:s'),
-        'updated_at' => date('Y-m-d H:i:s'),
-        'created_by' => $user_id
-    ];
+        $p = $this->security->xss_clean($this->input->post());
+        $user_id = $_SESSION['user_id'];
 
-    $insert_id = $this->App_model->insert_customer($data);
-    if (!$insert_id) { echo json_encode(['error' => '<p>Could not save customer. Please try again.</p>']); return; }
-
-    echo json_encode(['success' => 1, 'message' => 'Customer added successfully.', 'id' => $insert_id]);
-}
-
-
-public function customers_list()
-{
-    $this->check_login();
-
-    $draw    = (int)$this->input->post('draw');
-    $start   = (int)$this->input->post('start');
-    $length  = (int)$this->input->post('length');
-    $search  = $this->input->post('search')['value'] ?? '';
-
-    $order     = $this->input->post('order')[0] ?? null;
-    $columns   = $this->input->post('columns') ?? [];
-    $order_by  = 'name';
-    $order_dir = 'asc';
-
-    if ($order) {
-        $colIdx    = (int)$order['column'];
-        $order_dir = strtolower($order['dir']) === 'desc' ? 'desc' : 'asc';
-        $safeMap   = ['avatar','name','email','phone','address','status','created_at','id'];
-        $colKey    = $columns[$colIdx]['data'] ?? 'name';
-        $order_by  = in_array($colKey, $safeMap, true) ? $colKey : 'name';
-    }
-
-    $result = $this->App_model->datatable_customers($start, $length, $search, $order_by, $order_dir);
-
-    echo json_encode([
-        'draw'            => $draw,
-        'recordsTotal'    => $result['total'],
-        'recordsFiltered' => $result['filtered'],
-        'data'            => $result['rows'],
-    ]);
-}
-
-
-public function get_customer($id)
-{
-    $this->check_login();
-    $id = (int)$id;
-    if (!$id) { echo json_encode(['error' => '<p>Invalid id</p>']); return; }
-
-    $row = $this->App_model->get_customer($id);
-    if (!$row) { echo json_encode(['error' => '<p>Customer not found</p>']); return; }
-
-    echo json_encode(['success' => 1, 'data' => $row]); // avatar already full URL
-}
-
-
-public function update_customer_submit()
-{
-    $this->check_login();
-
-    $this->form_validation->set_rules('customer_id', 'Customer', 'required|integer');
-    $this->form_validation->set_rules('name',        'Name',     'required|trim');
-    $this->form_validation->set_rules('email',       'Email',    'trim|valid_email');
-
-    if ($this->form_validation->run() === FALSE) {
-        echo json_encode(['error' => validation_errors()]); return;
-    }
-
-    $p  = $this->security->xss_clean($this->input->post());
-    $id = (int)$p['customer_id'];
-
-    $row = $this->App_model->get_customer($id);
-    if (!$row) { echo json_encode(['error' => '<p>Customer not found</p>']); return; }
-
-    // optional new avatar
-    $avatar_url = $row['avatar'];
-    if (!empty($_FILES['avatar']['name'])) {
-        $this->upload->initialize($this->file_config);
-        if (!$this->upload->do_upload('avatar')) {
-            echo json_encode(['error' => '<p>'.$this->upload->display_errors('', '').'</p>']); return;
+        // optional avatar upload ("avatar" input)
+        $avatar_url = null;
+        if (!empty($_FILES['avatar']['name'])) {
+            $this->upload->initialize($this->file_config);
+            if (!$this->upload->do_upload('avatar')) {
+                echo json_encode(['error' => '<p>' . $this->upload->display_errors('', '') . '</p>']);
+                return;
+            }
+            $avatar_url = base_url() . 'uploads/' . $this->upload->data('file_name'); // full URL (consistent)
         }
-        $avatar_url = base_url().'uploads/'.$this->upload->data('file_name');
+
+        $data = [
+            'name'       => $p['name'],
+            'email'      => $p['email'] ?? null,
+            'phone'      => $p['phone'] ?? null,
+            'address'    => $p['address'] ?? null,
+            'avatar'     => $avatar_url ?: 'https://static.vecteezy.com/system/resources/thumbnails/000/546/318/small/diamond_002.jpg',
+            'status'     => 1,
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s'),
+            'created_by' => $user_id
+        ];
+
+        $insert_id = $this->App_model->insert_customer($data);
+        if (!$insert_id) {
+            echo json_encode(['error' => '<p>Could not save customer. Please try again.</p>']);
+            return;
+        }
+
+        echo json_encode(['success' => 1, 'message' => 'Customer added successfully.', 'id' => $insert_id]);
     }
 
-    $data = [
-        'name'       => $p['name'],
-        'email'      => $p['email'] ?? null,
-        'phone'      => $p['phone'] ?? null,
-        'address'    => $p['address'] ?? null,
-        'avatar'     => $avatar_url,
-        'updated_at' => date('Y-m-d H:i:s'),
-    ];
 
-    $ok = $this->App_model->update_customer_by_id($id, $data);
-    if (!$ok) { echo json_encode(['error' => '<p>Could not update customer</p>']); return; }
+    public function customers_list()
+    {
+        $this->check_login();
 
-    echo json_encode(['success' => 1, 'message' => 'Customer updated']);
-}
+        $draw    = (int)$this->input->post('draw');
+        $start   = (int)$this->input->post('start');
+        $length  = (int)$this->input->post('length');
+        $search  = $this->input->post('search')['value'] ?? '';
 
+        $order     = $this->input->post('order')[0] ?? null;
+        $columns   = $this->input->post('columns') ?? [];
+        $order_by  = 'name';
+        $order_dir = 'asc';
+
+        if ($order) {
+            $colIdx    = (int)$order['column'];
+            $order_dir = strtolower($order['dir']) === 'desc' ? 'desc' : 'asc';
+            $safeMap   = ['avatar', 'name', 'email', 'phone', 'address', 'status', 'created_at', 'id'];
+            $colKey    = $columns[$colIdx]['data'] ?? 'name';
+            $order_by  = in_array($colKey, $safeMap, true) ? $colKey : 'name';
+        }
+
+        $result = $this->App_model->datatable_customers($start, $length, $search, $order_by, $order_dir);
+
+        echo json_encode([
+            'draw'            => $draw,
+            'recordsTotal'    => $result['total'],
+            'recordsFiltered' => $result['filtered'],
+            'data'            => $result['rows'],
+        ]);
+    }
+
+
+    public function get_customer($id)
+    {
+        $this->check_login();
+        $id = (int)$id;
+        if (!$id) {
+            echo json_encode(['error' => '<p>Invalid id</p>']);
+            return;
+        }
+
+        $row = $this->App_model->get_customer($id);
+        if (!$row) {
+            echo json_encode(['error' => '<p>Customer not found</p>']);
+            return;
+        }
+
+        echo json_encode(['success' => 1, 'data' => $row]); // avatar already full URL
+    }
+
+
+    public function update_customer_submit()
+    {
+        $this->check_login();
+
+        $this->form_validation->set_rules('customer_id', 'Customer', 'required|integer');
+        $this->form_validation->set_rules('name',        'Name',     'required|trim');
+        $this->form_validation->set_rules('email',       'Email',    'trim|valid_email');
+
+        if ($this->form_validation->run() === FALSE) {
+            echo json_encode(['error' => validation_errors()]);
+            return;
+        }
+
+        $p  = $this->security->xss_clean($this->input->post());
+        $id = (int)$p['customer_id'];
+
+        $row = $this->App_model->get_customer($id);
+        if (!$row) {
+            echo json_encode(['error' => '<p>Customer not found</p>']);
+            return;
+        }
+
+        // optional new avatar
+        $avatar_url = $row['avatar'];
+        if (!empty($_FILES['avatar']['name'])) {
+            $this->upload->initialize($this->file_config);
+            if (!$this->upload->do_upload('avatar')) {
+                echo json_encode(['error' => '<p>' . $this->upload->display_errors('', '') . '</p>']);
+                return;
+            }
+            $avatar_url = base_url() . 'uploads/' . $this->upload->data('file_name');
+        }
+
+        $data = [
+            'name'       => $p['name'],
+            'email'      => $p['email'] ?? null,
+            'phone'      => $p['phone'] ?? null,
+            'address'    => $p['address'] ?? null,
+            'avatar'     => $avatar_url,
+            'updated_at' => date('Y-m-d H:i:s'),
+        ];
+
+        $ok = $this->App_model->update_customer_by_id($id, $data);
+        if (!$ok) {
+            echo json_encode(['error' => '<p>Could not update customer</p>']);
+            return;
+        }
+
+        echo json_encode(['success' => 1, 'message' => 'Customer updated']);
+    }
+
+    public function purchase()
+    {
+        $this->check_login();
+        $this->load->view('purchase');
+    }
+    public function add_purchase()
+    {
+        $this->check_login();
+        $this->load->view('add_purchase');
+    }
+
+    public function add_purchase_submit()
+    {
+        $this->check_login();
+
+        $this->form_validation->set_rules('ref_no', 'Reference No', 'required|trim');
+        $this->form_validation->set_rules('supplier_id', 'Supplier', 'required|integer');
+        $this->form_validation->set_rules('purchase_date', 'Date', 'required|trim');
+        $this->form_validation->set_rules('items', 'Items', 'required|trim');
+
+        if ($this->form_validation->run() === FALSE) {
+            echo json_encode(['error' => validation_errors()]);
+            return;
+        }
+
+        $p = $this->security->xss_clean($this->input->post());
+        $items = json_decode($p['items'], true);
+        if (!is_array($items) || !count($items)) {
+            echo json_encode(['error' => '<p>Invalid items.</p>']);
+            return;
+        }
+
+        // compute total
+        $total = 0;
+        foreach ($items as $it) {
+            $qty   = (int)($it['qty'] ?? 0);
+            $price = (float)($it['price'] ?? 0);
+            $total += $qty * $price;
+        }
+
+        $data = [
+            'ref_no'        => $p['ref_no'],
+            'supplier_id'   => (int)$p['supplier_id'],
+            'purchase_date' => $p['purchase_date'],
+            'items'         => json_encode($items),
+            'total_amount'  => $total,
+            'created_at'    => date('Y-m-d H:i:s'),
+            'updated_at'    => date('Y-m-d H:i:s'),
+            'created_by'    => $_SESSION['user_id']
+        ];
+
+        $ok = $this->App_model->purchase_create($data, $items); // handles stock+ledger in TX
+        if (!$ok) {
+            echo json_encode(['error' => '<p>Could not save purchase.</p>']);
+            return;
+        }
+
+        echo json_encode(['success' => 1, 'message' => 'Purchase saved']);
+    }
+
+    public function purchases_list()
+    {
+        $this->check_login();
+        $draw   = (int)$this->input->post('draw');
+        $start  = (int)$this->input->post('start');
+        $length = (int)$this->input->post('length');
+        $search = $this->input->post('search')['value'] ?? '';
+
+        $order     = $this->input->post('order')[0] ?? null;
+        $columns   = $this->input->post('columns') ?? [];
+        $order_by  = 'purchase_date';
+        $order_dir = 'desc';
+        if ($order) {
+            $colIdx = (int)$order['column'];
+            $order_dir = strtolower($order['dir']) === 'asc' ? 'asc' : 'desc';
+            $safe = ['ref_no', 'purchase_date', 'total_amount'];
+            $colKey = $columns[$colIdx]['data'] ?? 'purchase_date';
+            $order_by = in_array($colKey, $safe, true) ? $colKey : 'purchase_date';
+        }
+        $result = $this->App_model->datatable_purchases($start, $length, $search, $order_by, $order_dir);
+
+        echo json_encode([
+            'draw' => $draw,
+            'recordsTotal' => $result['total'],
+            'recordsFiltered' => $result['filtered'],
+            'data' => $result['rows']
+        ]);
+    }
+
+    public function get_purchase($id)
+    {
+        $this->check_login();
+        $row = $this->App_model->get_purchase((int)$id);
+        if (!$row) {
+            echo json_encode(['error' => '<p>Not found.</p>']);
+            return;
+        }
+        $row['items'] = json_decode($row['items'], true);
+        echo json_encode(['success' => 1, 'data' => $row]);
+    }
+
+    public function update_purchase_submit()
+    {
+        $this->check_login();
+
+        $this->form_validation->set_rules('purchase_id', 'Purchase', 'required|integer');
+        $this->form_validation->set_rules('ref_no', 'Reference No', 'required|trim');
+        $this->form_validation->set_rules('supplier_id', 'Supplier', 'required|integer');
+        $this->form_validation->set_rules('purchase_date', 'Date', 'required|trim');
+        $this->form_validation->set_rules('items', 'Items', 'required|trim');
+
+        if ($this->form_validation->run() === FALSE) {
+            echo json_encode(['error' => validation_errors()]);
+            return;
+        }
+
+        $p = $this->security->xss_clean($this->input->post());
+        $id = (int)$p['purchase_id'];
+        $old = $this->App_model->get_purchase($id);
+        if (!$old) {
+            echo json_encode(['error' => '<p>Not found.</p>']);
+            return;
+        }
+
+        $items = json_decode($p['items'], true);
+        if (!is_array($items) || !count($items)) {
+            echo json_encode(['error' => '<p>Invalid items.</p>']);
+            return;
+        }
+
+        $total = 0;
+        foreach ($items as $it) {
+            $total += ((int)$it['qty']) * ((float)$it['price']);
+        }
+
+        $data = [
+            'ref_no'        => $p['ref_no'],
+            'supplier_id'   => (int)$p['supplier_id'],
+            'purchase_date' => $p['purchase_date'],
+            'items'         => json_encode($items),
+            'total_amount'  => $total,
+            'updated_at'    => date('Y-m-d H:i:s')
+        ];
+
+        $ok = $this->App_model->purchase_update($id, $old, $data, $items); // reverses old stock/ledger, reapplies new
+        if (!$ok) {
+            echo json_encode(['error' => '<p>Could not update purchase.</p>']);
+            return;
+        }
+
+        echo json_encode(['success' => 1, 'message' => 'Purchase updated']);
+    }
+
+    public function purchase_return()
+    {
+        $this->check_login();
+        $this->load->view('purchase_return');
+    }
+    public function add_purchase_return()
+    {
+        $this->check_login();
+        $this->load->view('add_purchase_return');
+    }
+
+    public function add_purchase_return_submit()
+    {
+        $this->check_login();
+
+        $this->form_validation->set_rules('ref_no', 'Reference No', 'required|trim');
+        $this->form_validation->set_rules('purchase_id', 'Purchase', 'required|integer');
+        $this->form_validation->set_rules('supplier_id', 'Supplier', 'required|integer');
+        $this->form_validation->set_rules('return_date', 'Date', 'required|trim');
+        $this->form_validation->set_rules('items', 'Items', 'required|trim');
+
+        if ($this->form_validation->run() === FALSE) {
+            echo json_encode(['error' => validation_errors()]);
+            return;
+        }
+
+        $p = $this->security->xss_clean($this->input->post());
+        $items = json_decode($p['items'], true);
+        if (!is_array($items) || !count($items)) {
+            echo json_encode(['error' => '<p>Invalid items.</p>']);
+            return;
+        }
+
+        $amount = 0;
+        foreach ($items as $it) {
+            $amount += ((int)$it['qty']) * ((float)$it['price']);
+        }
+
+        $data = [
+            'ref_no'        => $p['ref_no'],
+            'purchase_id'   => (int)$p['purchase_id'],
+            'supplier_id'   => (int)$p['supplier_id'],
+            'return_date'   => $p['return_date'],
+            'items'         => json_encode($items),
+            'return_amount' => $amount,
+            'created_at'    => date('Y-m-d H:i:s'),
+            'updated_at'    => date('Y-m-d H:i:s'),
+            'created_by'    => $_SESSION['user_id']
+        ];
+
+        $ok = $this->App_model->purchase_return_create($data, $items);
+        if (!$ok) {
+            echo json_encode(['error' => '<p>Could not save purchase return.</p>']);
+            return;
+        }
+
+        echo json_encode(['success' => 1, 'message' => 'Purchase return saved']);
+    }
+
+    public function purchase_returns_list()
+    {
+        $this->check_login();
+        $draw = (int)$this->input->post('draw');
+        $start = (int)$this->input->post('start');
+        $length = (int)$this->input->post('length');
+        $search = $this->input->post('search')['value'] ?? '';
+
+        $order = $this->input->post('order')[0] ?? null;
+        $columns = $this->input->post('columns') ?? [];
+        $order_by = 'return_date';
+        $order_dir = 'desc';
+        if ($order) {
+            $colIdx = (int)$order['column'];
+            $order_dir = strtolower($order['dir']) === 'asc' ? 'asc' : 'desc';
+            $safe = ['ref_no', 'return_date', 'return_amount'];
+            $colKey = $columns[$colIdx]['data'] ?? 'return_date';
+            $order_by = in_array($colKey, $safe, true) ? $colKey : 'return_date';
+        }
+
+        $result = $this->App_model->datatable_purchase_returns($start, $length, $search, $order_by, $order_dir);
+        echo json_encode(['draw' => $draw, 'recordsTotal' => $result['total'], 'recordsFiltered' => $result['filtered'], 'data' => $result['rows']]);
+    }
+
+    public function get_purchase_return($id)
+    {
+        $this->check_login();
+        $row = $this->App_model->get_purchase_return((int)$id);
+        if (!$row) {
+            echo json_encode(['error' => '<p>Not found.</p>']);
+            return;
+        }
+        $row['items'] = json_decode($row['items'], true);
+        echo json_encode(['success' => 1, 'data' => $row]);
+    }
+
+    public function update_purchase_return_submit()
+    {
+        $this->check_login();
+
+        $this->form_validation->set_rules('purchase_return_id', 'Purchase Return', 'required|integer');
+        $this->form_validation->set_rules('ref_no', 'Reference No', 'required|trim');
+        $this->form_validation->set_rules('purchase_id', 'Purchase', 'required|integer');
+        $this->form_validation->set_rules('supplier_id', 'Supplier', 'required|integer');
+        $this->form_validation->set_rules('return_date', 'Date', 'required|trim');
+        $this->form_validation->set_rules('items', 'Items', 'required|trim');
+
+        if ($this->form_validation->run() === FALSE) {
+            echo json_encode(['error' => validation_errors()]);
+            return;
+        }
+
+        $p = $this->security->xss_clean($this->input->post());
+        $id = (int)$p['purchase_return_id'];
+        $old = $this->App_model->get_purchase_return($id);
+        if (!$old) {
+            echo json_encode(['error' => '<p>Not found.</p>']);
+            return;
+        }
+
+        $items = json_decode($p['items'], true);
+        if (!is_array($items) || !count($items)) {
+            echo json_encode(['error' => '<p>Invalid items.</p>']);
+            return;
+        }
+
+        $amount = 0;
+        foreach ($items as $it) {
+            $amount += ((int)$it['qty']) * ((float)$it['price']);
+        }
+
+        $data = [
+            'ref_no' => $p['ref_no'],
+            'purchase_id' => (int)$p['purchase_id'],
+            'supplier_id' => (int)$p['supplier_id'],
+            'return_date' => $p['return_date'],
+            'items' => json_encode($items),
+            'return_amount' => $amount,
+            'updated_at' => date('Y-m-d H:i:s')
+        ];
+
+        $ok = $this->App_model->purchase_return_update($id, $old, $data, $items);
+        if (!$ok) {
+            echo json_encode(['error' => '<p>Could not update purchase return.</p>']);
+            return;
+        }
+
+        echo json_encode(['success' => 1, 'message' => 'Purchase return updated']);
+    }
+
+    public function sales()
+    {
+        $this->check_login();
+        $this->load->view('sales');
+    }
+    public function add_sale()
+    {
+        $this->check_login();
+        $this->load->view('add_sale');
+    }
+
+    public function add_sale_submit()
+    {
+        $this->check_login();
+
+        $this->form_validation->set_rules('invoice_no', 'Invoice No', 'required|trim');
+        $this->form_validation->set_rules('customer_id', 'Customer', 'required|integer');
+        $this->form_validation->set_rules('sale_date', 'Date', 'required|trim');
+        $this->form_validation->set_rules('items', 'Items', 'required|trim');
+
+        if ($this->form_validation->run() === FALSE) {
+            echo json_encode(['error' => validation_errors()]);
+            return;
+        }
+
+        $p = $this->security->xss_clean($this->input->post());
+        $items = json_decode($p['items'], true);
+        if (!is_array($items) || !count($items)) {
+            echo json_encode(['error' => '<p>Invalid items.</p>']);
+            return;
+        }
+
+        $total = 0;
+        foreach ($items as $it) {
+            $total += ((int)$it['qty']) * ((float)$it['price']);
+        }
+
+        $data = [
+            'invoice_no' => $p['invoice_no'],
+            'customer_id' => (int)$p['customer_id'],
+            'sale_date' => $p['sale_date'],
+            'items' => json_encode($items),
+            'total_amount' => $total,
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s'),
+            'created_by' => $_SESSION['user_id']
+        ];
+
+        $ok = $this->App_model->sale_create($data, $items); // handles stock- & ledger+
+        if (!$ok) {
+            echo json_encode(['error' => '<p>Could not save sale.</p>']);
+            return;
+        }
+
+        echo json_encode(['success' => 1, 'message' => 'Sale saved']);
+    }
+
+    public function sales_list()
+    {
+        $this->check_login();
+        $draw = (int)$this->input->post('draw');
+        $start = (int)$this->input->post('start');
+        $length = (int)$this->input->post('length');
+        $search = $this->input->post('search')['value'] ?? '';
+
+        $order = $this->input->post('order')[0] ?? null;
+        $columns = $this->input->post('columns') ?? [];
+        $order_by = 'sale_date';
+        $order_dir = 'desc';
+        if ($order) {
+            $colIdx = (int)$order['column'];
+            $order_dir = strtolower($order['dir']) === 'asc' ? 'asc' : 'desc';
+            $safe = ['invoice_no', 'sale_date', 'total_amount'];
+            $colKey = $columns[$colIdx]['data'] ?? 'sale_date';
+            $order_by = in_array($colKey, $safe, true) ? $colKey : 'sale_date';
+        }
+        $result = $this->App_model->datatable_sales($start, $length, $search, $order_by, $order_dir);
+        echo json_encode(['draw' => $draw, 'recordsTotal' => $result['total'], 'recordsFiltered' => $result['filtered'], 'data' => $result['rows']]);
+    }
+
+    public function get_sale($id)
+    {
+        $this->check_login();
+        $row = $this->App_model->get_sale((int)$id);
+        if (!$row) {
+            echo json_encode(['error' => '<p>Not found.</p>']);
+            return;
+        }
+        $row['items'] = json_decode($row['items'], true);
+        echo json_encode(['success' => 1, 'data' => $row]);
+    }
+
+    public function update_sale_submit()
+    {
+        $this->check_login();
+
+        $this->form_validation->set_rules('sale_id', 'Sale', 'required|integer');
+        $this->form_validation->set_rules('invoice_no', 'Invoice No', 'required|trim');
+        $this->form_validation->set_rules('customer_id', 'Customer', 'required|integer');
+        $this->form_validation->set_rules('sale_date', 'Date', 'required|trim');
+        $this->form_validation->set_rules('items', 'Items', 'required|trim');
+
+        if ($this->form_validation->run() === FALSE) {
+            echo json_encode(['error' => validation_errors()]);
+            return;
+        }
+
+        $p = $this->security->xss_clean($this->input->post());
+        $id = (int)$p['sale_id'];
+        $old = $this->App_model->get_sale($id);
+        if (!$old) {
+            echo json_encode(['error' => '<p>Not found.</p>']);
+            return;
+        }
+
+        $items = json_decode($p['items'], true);
+        if (!is_array($items) || !count($items)) {
+            echo json_encode(['error' => '<p>Invalid items.</p>']);
+            return;
+        }
+
+        $total = 0;
+        foreach ($items as $it) {
+            $total += ((int)$it['qty']) * ((float)$it['price']);
+        }
+
+        $data = [
+            'invoice_no' => $p['invoice_no'],
+            'customer_id' => (int)$p['customer_id'],
+            'sale_date' => $p['sale_date'],
+            'items' => json_encode($items),
+            'total_amount' => $total,
+            'updated_at' => date('Y-m-d H:i:s')
+        ];
+
+        $ok = $this->App_model->sale_update($id, $old, $data, $items);
+        if (!$ok) {
+            echo json_encode(['error' => '<p>Could not update sale.</p>']);
+            return;
+        }
+
+        echo json_encode(['success' => 1, 'message' => 'Sale updated']);
+    }
+
+    public function sales_return()
+    {
+        $this->check_login();
+        $this->load->view('sales_return');
+    }
+    public function add_sales_return()
+    {
+        $this->check_login();
+        $this->load->view('add_sales_return');
+    }
+
+    public function add_sales_return_submit()
+    {
+        $this->check_login();
+
+        $this->form_validation->set_rules('ref_no', 'Reference No', 'required|trim');
+        $this->form_validation->set_rules('sale_id', 'Sale', 'required|integer');
+        $this->form_validation->set_rules('customer_id', 'Customer', 'required|integer');
+        $this->form_validation->set_rules('return_date', 'Date', 'required|trim');
+        $this->form_validation->set_rules('items', 'Items', 'required|trim');
+
+        if ($this->form_validation->run() === FALSE) {
+            echo json_encode(['error' => validation_errors()]);
+            return;
+        }
+
+        $p = $this->security->xss_clean($this->input->post());
+        $items = json_decode($p['items'], true);
+        if (!is_array($items) || !count($items)) {
+            echo json_encode(['error' => '<p>Invalid items.</p>']);
+            return;
+        }
+
+        $amount = 0;
+        foreach ($items as $it) {
+            $amount += ((int)$it['qty']) * ((float)$it['price']);
+        }
+
+        $data = [
+            'ref_no' => $p['ref_no'],
+            'sale_id' => (int)$p['sale_id'],
+            'customer_id' => (int)$p['customer_id'],
+            'return_date' => $p['return_date'],
+            'items' => json_encode($items),
+            'return_amount' => $amount,
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s'),
+            'created_by' => $_SESSION['user_id']
+        ];
+
+        $ok = $this->App_model->sales_return_create($data, $items);
+        if (!$ok) {
+            echo json_encode(['error' => '<p>Could not save sales return.</p>']);
+            return;
+        }
+
+        echo json_encode(['success' => 1, 'message' => 'Sales return saved']);
+    }
+
+    public function sales_returns_list()
+    {
+        $this->check_login();
+        $draw = (int)$this->input->post('draw');
+        $start = (int)$this->input->post('start');
+        $length = (int)$this->input->post('length');
+        $search = $this->input->post('search')['value'] ?? '';
+
+        $order = $this->input->post('order')[0] ?? null;
+        $columns = $this->input->post('columns') ?? [];
+        $order_by = 'return_date';
+        $order_dir = 'desc';
+        if ($order) {
+            $colIdx = (int)$order['column'];
+            $order_dir = strtolower($order['dir']) === 'asc' ? 'asc' : 'desc';
+            $safe = ['ref_no', 'return_date', 'return_amount'];
+            $colKey = $columns[$colIdx]['data'] ?? 'return_date';
+            $order_by = in_array($colKey, $safe, true) ? $colKey : 'return_date';
+        }
+
+        $result = $this->App_model->datatable_sales_returns($start, $length, $search, $order_by, $order_dir);
+        echo json_encode(['draw' => $draw, 'recordsTotal' => $result['total'], 'recordsFiltered' => $result['filtered'], 'data' => $result['rows']]);
+    }
+
+    public function get_sales_return($id)
+    {
+        $this->check_login();
+        $row = $this->App_model->get_sales_return((int)$id);
+        if (!$row) {
+            echo json_encode(['error' => '<p>Not found.</p>']);
+            return;
+        }
+        $row['items'] = json_decode($row['items'], true);
+        echo json_encode(['success' => 1, 'data' => $row]);
+    }
+
+    public function update_sales_return_submit()
+    {
+        $this->check_login();
+
+        $this->form_validation->set_rules('sales_return_id', 'Sales Return', 'required|integer');
+        $this->form_validation->set_rules('ref_no', 'Reference No', 'required|trim');
+        $this->form_validation->set_rules('sale_id', 'Sale', 'required|integer');
+        $this->form_validation->set_rules('customer_id', 'Customer', 'required|integer');
+        $this->form_validation->set_rules('return_date', 'Date', 'required|trim');
+        $this->form_validation->set_rules('items', 'Items', 'required|trim');
+
+        if ($this->form_validation->run() === FALSE) {
+            echo json_encode(['error' => validation_errors()]);
+            return;
+        }
+
+        $p = $this->security->xss_clean($this->input->post());
+        $id = (int)$p['sales_return_id'];
+        $old = $this->App_model->get_sales_return($id);
+        if (!$old) {
+            echo json_encode(['error' => '<p>Not found.</p>']);
+            return;
+        }
+
+        $items = json_decode($p['items'], true);
+        if (!is_array($items) || !count($items)) {
+            echo json_encode(['error' => '<p>Invalid items.</p>']);
+            return;
+        }
+
+        $amount = 0;
+        foreach ($items as $it) {
+            $amount += ((int)$it['qty']) * ((float)$it['price']);
+        }
+
+        $data = [
+            'ref_no' => $p['ref_no'],
+            'sale_id' => (int)$p['sale_id'],
+            'customer_id' => (int)$p['customer_id'],
+            'return_date' => $p['return_date'],
+            'items' => json_encode($items),
+            'return_amount' => $amount,
+            'updated_at' => date('Y-m-d H:i:s')
+        ];
+
+        $ok = $this->App_model->sales_return_update($id, $old, $data, $items);
+        if (!$ok) {
+            echo json_encode(['error' => '<p>Could not update sales return.</p>']);
+            return;
+        }
+
+        echo json_encode(['success' => 1, 'message' => 'Sales return updated']);
+    }
+
+    // --- Payments pages ---
+    public function payment()
+    {
+        $this->check_login();
+        $this->load->view('payments');
+    }
+    public function add_payment()
+    {
+        $this->check_login();
+        $this->load->view('payments'); // same page (add panel on top)
+    }
+
+    // Add payment submit
+    public function add_payment_submit()
+    {
+        $this->check_login();
+
+        // rules
+        $this->form_validation->set_rules('ref_no', 'Reference No', 'required|trim');
+        $this->form_validation->set_rules('payment_date', 'Date', 'required|trim');
+        $this->form_validation->set_rules('type', 'Type', 'required|in_list[customer,supplier]');
+        $this->form_validation->set_rules('party_id', 'Party', 'required|integer');
+        $this->form_validation->set_rules('mode', 'Mode', 'required|in_list[cash,cheque]');
+        $this->form_validation->set_rules('amount', 'Amount', 'required|numeric|greater_than[0]');
+        if ($this->input->post('mode') === 'cheque') {
+            $this->form_validation->set_rules('cheque_no', 'Cheque No', 'required|trim');
+            $this->form_validation->set_rules('cheque_date', 'Cheque Date', 'required|trim');
+        }
+
+        if ($this->form_validation->run() === FALSE) {
+            echo json_encode(['error' => validation_errors()]);
+            return;
+        }
+
+        $p = $this->security->xss_clean($this->input->post());
+        $user_id = $_SESSION['user_id'];
+
+        $data = [
+            'ref_no'       => $p['ref_no'],
+            'payment_date' => $p['payment_date'], // 'Y-m-d H:i:s' from <input type="datetime-local">
+            'type'         => $p['type'],         // customer|supplier
+            'party_id'     => (int)$p['party_id'],
+            'mode'         => $p['mode'],         // cash|cheque
+            'cheque_no'    => $p['mode'] === 'cheque' ? ($p['cheque_no'] ?? null) : null,
+            'cheque_date'  => $p['mode'] === 'cheque' ? ($p['cheque_date'] ?? null) : null,
+            'amount'       => (float)$p['amount'],
+            'note'         => $p['note'] ?? null,
+            'created_by'   => $user_id,
+            'created_at'   => date('Y-m-d H:i:s'),
+            'updated_at'   => date('Y-m-d H:i:s'),
+        ];
+
+        $payment_id = $this->App_model->insert_payment($data);
+        if (!$payment_id) {
+            echo json_encode(['error' => '<p>Could not save payment.</p>']);
+            return;
+        }
+
+        // Ledger: receive from customer = CREDIT (we got money), pay to supplier = DEBIT (we paid out)
+        $credit = 0;
+        $debit = 0;
+        $desc = strtoupper($data['mode']) . ' Payment ' . $data['ref_no'];
+        if ($data['type'] === 'customer') {
+            $credit = $data['amount']; // incoming
+        } else {
+            $debit  = $data['amount']; // outgoing
+        }
+
+        $this->App_model->insert_ledger([
+            'entry_date' => $data['payment_date'],
+            'ref_type'   => 'payment',
+            'ref_id'     => $payment_id,
+            'party_type' => $data['type'],
+            'party_id'   => $data['party_id'],
+            'description' => $desc,
+            'debit'      => $debit,
+            'credit'     => $credit,
+            'created_at' => date('Y-m-d H:i:s')
+        ]);
+
+        echo json_encode(['success' => 1, 'message' => 'Payment saved.', 'id' => $payment_id]);
+    }
+
+    // Server-side list
+    public function payments_list()
+    {
+        $this->check_login();
+
+        $draw    = (int)$this->input->post('draw');
+        $start   = (int)$this->input->post('start');
+        $length  = (int)$this->input->post('length');
+        $search  = $this->input->post('search')['value'] ?? '';
+
+        $order   = $this->input->post('order')[0] ?? null;
+        $columns = $this->input->post('columns') ?? [];
+        $order_by  = 'payment_date';
+        $order_dir = 'desc';
+        if ($order) {
+            $idx = (int)$order['column'];
+            $order_dir = strtolower($order['dir']) === 'asc' ? 'asc' : 'desc';
+            $safeMap = ['ref_no', 'payment_date', 'type', 'mode', 'amount', 'id'];
+            $colKey  = $columns[$idx]['data'] ?? 'payment_date';
+            $order_by = in_array($colKey, $safeMap, true) ? $colKey : 'payment_date';
+        }
+
+        $result = $this->App_model->datatable_payments($start, $length, $search, $order_by, $order_dir);
+
+        // add party_label for each row
+        foreach ($result['rows'] as &$r) {
+            if ($r['type'] === 'supplier') {
+                $r['party_label'] = $this->App_model->get_supplier_name((int)$r['party_id']) ?? 'Supplier #' . $r['party_id'];
+            } else {
+                $r['party_label'] = $this->App_model->get_customer_name((int)$r['party_id']) ?? 'Customer #' . $r['party_id'];
+            }
+        }
+
+        echo json_encode([
+            'draw'            => $draw,
+            'recordsTotal'    => $result['total'],
+            'recordsFiltered' => $result['filtered'],
+            'data'            => $result['rows'],
+        ]);
+    }
+
+    // Single record
+    public function get_payment($id)
+    {
+        $this->check_login();
+        $id = (int)$id;
+        if (!$id) {
+            echo json_encode(['error' => '<p>Invalid id</p>']);
+            return;
+        }
+        $row = $this->App_model->get_payment($id);
+        if (!$row) {
+            echo json_encode(['error' => '<p>Payment not found</p>']);
+            return;
+        }
+
+        $row['party_label'] = $row['type'] === 'supplier'
+            ? ($this->App_model->get_supplier_name((int)$row['party_id']) ?? null)
+            : ($this->App_model->get_customer_name((int)$row['party_id']) ?? null);
+
+        echo json_encode(['success' => 1, 'data' => $row]);
+    }
+
+    // Update payment
+    public function update_payment_submit()
+    {
+        $this->check_login();
+
+        $this->form_validation->set_rules('payment_id', 'Payment', 'required|integer');
+        $this->form_validation->set_rules('ref_no', 'Reference No', 'required|trim');
+        $this->form_validation->set_rules('payment_date', 'Date', 'required|trim');
+        $this->form_validation->set_rules('type', 'Type', 'required|in_list[customer,supplier]');
+        $this->form_validation->set_rules('party_id', 'Party', 'required|integer');
+        $this->form_validation->set_rules('mode', 'Mode', 'required|in_list[cash,cheque]');
+        $this->form_validation->set_rules('amount', 'Amount', 'required|numeric|greater_than[0]');
+        if ($this->input->post('mode') === 'cheque') {
+            $this->form_validation->set_rules('cheque_no', 'Cheque No', 'required|trim');
+            $this->form_validation->set_rules('cheque_date', 'Cheque Date', 'required|trim');
+        }
+
+        if ($this->form_validation->run() === FALSE) {
+            echo json_encode(['error' => validation_errors()]);
+            return;
+        }
+
+        $p = $this->security->xss_clean($this->input->post());
+        $id = (int)$p['payment_id'];
+
+        $row = $this->App_model->get_payment($id);
+        if (!$row) {
+            echo json_encode(['error' => '<p>Payment not found</p>']);
+            return;
+        }
+
+        $data = [
+            'ref_no'       => $p['ref_no'],
+            'payment_date' => $p['payment_date'],
+            'type'         => $p['type'],
+            'party_id'     => (int)$p['party_id'],
+            'mode'         => $p['mode'],
+            'cheque_no'    => $p['mode'] === 'cheque' ? ($p['cheque_no'] ?? null) : null,
+            'cheque_date'  => $p['mode'] === 'cheque' ? ($p['cheque_date'] ?? null) : null,
+            'amount'       => (float)$p['amount'],
+            'note'         => $p['note'] ?? null,
+            'updated_at'   => date('Y-m-d H:i:s'),
+        ];
+
+        $ok = $this->App_model->update_payment_by_id($id, $data);
+        if (!$ok) {
+            echo json_encode(['error' => '<p>Could not update payment</p>']);
+            return;
+        }
+
+        // Refresh ledger rows for this payment: delete & insert new
+        $this->App_model->delete_ledger_by_payment($id);
+
+        $credit = 0;
+        $debit = 0;
+        $desc = strtoupper($data['mode']) . ' Payment ' . $data['ref_no'];
+        if ($data['type'] === 'customer') $credit = $data['amount'];
+        else $debit = $data['amount'];
+
+        $this->App_model->insert_ledger([
+            'entry_date' => $data['payment_date'],
+            'ref_type'   => 'payment',
+            'ref_id'     => $id,
+            'party_type' => $data['type'],
+            'party_id'   => $data['party_id'],
+            'description' => $desc,
+            'debit'      => $debit,
+            'credit'     => $credit,
+            'created_at' => date('Y-m-d H:i:s')
+        ]);
+
+        echo json_encode(['success' => 1, 'message' => 'Payment updated']);
+    }
 }
