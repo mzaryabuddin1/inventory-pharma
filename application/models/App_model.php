@@ -35,9 +35,12 @@ class App_model extends CI_Model
   // Products_model.php
   public function datatable_products($start, $length, $search, $order_by, $order_dir)
   {
+    $uid = (int)$_SESSION['user_id'];
     // 1) Fetch base products. You can add simple product-level search here to pre-filter.
-    $this->db->select('id,image,product_name,generic,prices,created_at');
-    $products = $this->db->get('products')->result_array();
+    $products = $this->db->select('id,image,product_name,generic,prices,created_at')
+      ->from('products')
+      ->where('created_by', $uid)
+      ->get()->result_array();
 
     // 2) Explode products into 1 row per price entry
     $expanded = [];
@@ -134,7 +137,10 @@ class App_model extends CI_Model
 
   public function get_product($id)
   {
-    return $this->db->get_where('products', ['id' => (int)$id])->row_array();
+    return $this->db->get_where('products', [
+      'id' => (int)$id,
+      'created_by' => (int)$_SESSION['user_id']
+    ])->row_array();
   }
 
   public function product_update_by_id($id, $data)
@@ -152,7 +158,10 @@ class App_model extends CI_Model
 
   public function get_supplier($id)
   {
-    return $this->db->get_where('suppliers', ['id' => (int)$id])->row_array();
+    return $this->db->get_where('suppliers', [
+      'id' => (int)$id,
+      'created_by' => (int)$_SESSION['user_id']
+    ])->row_array();
   }
 
   public function update_supplier_by_id($id, $data)
@@ -164,13 +173,15 @@ class App_model extends CI_Model
   /* DataTables server-side for suppliers */
   public function datatable_suppliers($start, $length, $search, $order_by, $order_dir)
   {
+    $uid = (int)$_SESSION['user_id'];
     $table = 'suppliers';
 
     // total
-    $total = $this->db->count_all($table);
+    $this->db->from($table)->where('created_by', $uid);
+    $total = $this->db->count_all_results();
 
     // base + search (keep builder alive)
-    $this->db->from($table);
+    $this->db->from($table)->where('created_by', $uid);
     if ($search !== '') {
       $this->db->group_start()
         ->like('name', $search)
@@ -210,7 +221,10 @@ class App_model extends CI_Model
 
   public function get_customer($id)
   {
-    return $this->db->get_where('customers', ['id' => (int)$id])->row_array();
+    return $this->db->get_where('customers', [
+      'id' => (int)$id,
+      'created_by' => (int)$_SESSION['user_id']
+    ])->row_array();
   }
 
   public function update_customer_by_id($id, $data)
@@ -222,13 +236,15 @@ class App_model extends CI_Model
   /* DataTables server-side for customers */
   public function datatable_customers($start, $length, $search, $order_by, $order_dir)
   {
+    $uid = (int)$_SESSION['user_id'];
     $table = 'customers';
 
     // total
-    $total = $this->db->count_all($table);
+    $this->db->from($table)->where('created_by', $uid);
+    $total = $this->db->count_all_results();
 
     // base + search (keep builder alive)
-    $this->db->from($table);
+    $this->db->from($table)->where('created_by', $uid);
     if ($search !== '') {
       $this->db->group_start()
         ->like('name', $search)
@@ -263,43 +279,42 @@ class App_model extends CI_Model
 
   private function ledger_post($party_type, $party_id, $ref_type, $ref_no, $amount, $direction)
   {
-    // direction: 'debit' or 'credit'
     $row = [
       'party_type' => $party_type,
       'party_id'   => (int)$party_id,
       'ref_type'   => $ref_type,
       'ref_no'     => $ref_no,
       'entry_date' => date('Y-m-d H:i:s'),
-      'debit'      => $direction === 'debit'  ? $amount : 0,
-      'credit'     => $direction === 'credit' ? $amount : 0,
+      'debit'      => $direction === 'debit'  ? (float)$amount : 0.0,
+      'credit'     => $direction === 'credit' ? (float)$amount : 0.0,
       'created_at' => date('Y-m-d H:i:s'),
+      'created_by' => (int)$_SESSION['user_id'],     // ⬅️ tenant
     ];
     return $this->db->insert('ledger', $row);
   }
 
   private function stock_adjust($product_id, $batch_no, $qty_delta, $last_cost = null)
   {
-    // upsert stock row by (product_id, batch_no)
-    $product_id = (int)$product_id;
-    $batch_no   = (string)$batch_no;
+    $uid = (int)$_SESSION['user_id'];
 
-    // try update
-    $this->db->set('qty', "qty + ({$qty_delta})", FALSE);
-    if ($last_cost !== null) $this->db->set('last_cost', $last_cost);
+    $this->db->set('qty', "qty + (" . (int)$qty_delta . ")", FALSE);
+    if ($last_cost !== null) $this->db->set('last_cost', (float)$last_cost);
     $this->db->set('updated_at', date('Y-m-d H:i:s'));
-    $this->db->where(['product_id' => $product_id, 'batch_no' => $batch_no]);
-    $this->db->update('stock');
+    $this->db->where([
+      'product_id' => (int)$product_id,
+      'batch_no'   => (string)$batch_no,
+      'created_by' => $uid
+    ])->update('stock');
 
     if ($this->db->affected_rows() === 0) {
-      // insert
-      $data = [
-        'product_id' => $product_id,
-        'batch_no'   => $batch_no,
-        'qty'        => $qty_delta,
-        'last_cost'  => $last_cost,
-        'updated_at' => date('Y-m-d H:i:s')
-      ];
-      return $this->db->insert('stock', $data);
+      $this->db->insert('stock', [
+        'product_id' => (int)$product_id,
+        'batch_no'   => (string)$batch_no,
+        'qty'        => (int)$qty_delta,
+        'last_cost'  => $last_cost !== null ? (float)$last_cost : null,
+        'updated_at' => date('Y-m-d H:i:s'),
+        'created_by' => $uid,                             // ⬅️ tenant
+      ]);
     }
     return true;
   }
@@ -327,15 +342,21 @@ class App_model extends CI_Model
 
   public function get_purchase($id)
   {
-    return $this->db->get_where('purchases', ['id' => (int)$id])->row_array();
+    return $this->db->get_where('purchases', [
+      'id' => (int)$id,
+      'created_by' => (int)$_SESSION['user_id']
+    ])->row_array();
   }
 
   public function datatable_purchases($start, $length, $search, $order_by, $order_dir)
   {
-    $table = 'purchases';
-    $total = $this->db->count_all($table);
+    $uid = (int)$_SESSION['user_id'];
 
-    $this->db->from($table);
+    $table = 'purchases';
+    $this->db->from($table)->where('created_by', $uid);
+    $total = $this->db->count_all_results();
+
+    $this->db->from($table)->where('created_by', $uid);
     if ($search !== '') {
       $this->db->group_start()
         ->like('ref_no', $search)
@@ -401,15 +422,20 @@ class App_model extends CI_Model
 
   public function get_purchase_return($id)
   {
-    return $this->db->get_where('purchase_returns', ['id' => (int)$id])->row_array();
+    return $this->db->get_where('purchase_returns', [
+      'id' => (int)$id,
+      'created_by' => (int)$_SESSION['user_id']
+    ])->row_array();
   }
 
   public function datatable_purchase_returns($start, $length, $search, $order_by, $order_dir)
   {
+    $uid = (int)$_SESSION['user_id'];
     $table = 'purchase_returns';
-    $total = $this->db->count_all($table);
+    $this->db->from($table)->where('created_by', $uid);
+    $total = $this->db->count_all_results();
 
-    $this->db->from($table);
+    $this->db->from($table)->where('created_by', $uid);
     if ($search !== '') {
       $this->db->group_start()
         ->like('ref_no', $search)
@@ -474,15 +500,21 @@ class App_model extends CI_Model
 
   public function get_sale($id)
   {
-    return $this->db->get_where('sales', ['id' => (int)$id])->row_array();
+    return $this->db->get_where('sales', [
+      'id' => (int)$id,
+      'created_by' => (int)$_SESSION['user_id']
+    ])->row_array();
   }
 
   public function datatable_sales($start, $length, $search, $order_by, $order_dir)
   {
+    $uid = (int)$_SESSION['user_id'];
     $table = 'sales';
-    $total = $this->db->count_all($table);
+    $this->db->from($table)->where('created_by', $uid);
+    $total = $this->db->count_all_results();
 
-    $this->db->from($table);
+
+    $this->db->from($table)->where('created_by', $uid);
     if ($search !== '') {
       $this->db->group_start()
         ->like('invoice_no', $search)
@@ -547,15 +579,21 @@ class App_model extends CI_Model
 
   public function get_sales_return($id)
   {
-    return $this->db->get_where('sales_returns', ['id' => (int)$id])->row_array();
+    return $this->db->get_where('sales_returns', [
+      'id' => (int)$id,
+      'created_by' => (int)$_SESSION['user_id']
+    ])->row_array();
   }
 
   public function datatable_sales_returns($start, $length, $search, $order_by, $order_dir)
   {
+    $uid = (int)$_SESSION['user_id'];
     $table = 'sales_returns';
-    $total = $this->db->count_all($table);
 
-    $this->db->from($table);
+    $this->db->from($table)->where('created_by', $uid);
+    $total = $this->db->count_all_results();
+
+    $this->db->from($table)->where('created_by', $uid);
     if ($search !== '') {
       $this->db->group_start()
         ->like('ref_no', $search)
@@ -601,98 +639,118 @@ class App_model extends CI_Model
   }
 
   // --- Payments ---
-public function insert_payment($data) {
-  $this->db->insert('payments', $data);
-  return $this->db->insert_id();
-}
-
-public function update_payment_by_id($id, $data) {
-  $this->db->where('id', (int)$id);
-  return $this->db->update('payments', $data);
-}
-
-public function get_payment($id) {
-  return $this->db->get_where('payments', ['id' => (int)$id])->row_array();
-}
-
-/**
- * Server-side list with basic search/order/pagination.
- * Searchable: ref_no, mode, amount, payment_date.
- * Party name is resolved outside (controller) to keep SQL simple.
- */
-public function datatable_payments($start, $length, $search, $order_by, $order_dir) {
-  $this->db->from('payments');
-
-  // total before filter
-  $total = $this->db->count_all_results('', FALSE);
-
-  // search
-  if ($search !== '') {
-    $this->db->group_start()
-      ->like('ref_no', $search)
-      ->or_like('mode', $search)
-      ->or_like('amount', $search)
-      ->or_like('payment_date', $search)
-    ->group_end();
+  public function insert_payment($data)
+  {
+    $this->db->insert('payments', $data);
+    return $this->db->insert_id();
   }
 
-  // filtered count
-  $filtered = $this->db->count_all_results('', FALSE);
+  public function update_payment_by_id($id, $data)
+  {
+    $this->db->where('id', (int)$id);
+    return $this->db->update('payments', $data);
+  }
 
-  // order safety map
-  $safeMap = ['ref_no','payment_date','type','mode','amount','id'];
-  $order_by = in_array($order_by, $safeMap, true) ? $order_by : 'payment_date';
-  $order_dir = strtolower($order_dir) === 'asc' ? 'asc' : 'desc';
-  $this->db->order_by($order_by, $order_dir);
+  public function get_payment($id)
+  {
+    return $this->db->get_where('payments', [
+      'id' => (int)$id,
+      'created_by' => (int)$_SESSION['user_id']
+    ])->row_array();
+  }
 
-  // page slice
-  if ($length > 0) $this->db->limit($length, $start);
+  /**
+   * Server-side list with basic search/order/pagination.
+   * Searchable: ref_no, mode, amount, payment_date.
+   * Party name is resolved outside (controller) to keep SQL simple.
+   */
+  public function datatable_payments($start, $length, $search, $order_by, $order_dir)
+  {
+    $uid = (int)$_SESSION['user_id'];
+    $this->db->from('payments')->where('created_by', $uid);
 
-  $rows = $this->db->get()->result_array();
+    // total before filter
+    $total = $this->db->count_all_results('', FALSE);
 
-  return ['total'=>$total, 'filtered'=>$filtered, 'rows'=>$rows];
-}
+    // search
+    if ($search !== '') {
+      $this->db->group_start()
+        ->like('ref_no', $search)
+        ->or_like('mode', $search)
+        ->or_like('amount', $search)
+        ->or_like('payment_date', $search)
+        ->group_end();
+    }
 
-// Resolve party label (helper): fetch name quickly
-public function get_supplier_name($id) {
-  $row = $this->db->select('name')->from('suppliers')->where('id', (int)$id)->get()->row_array();
-  return $row['name'] ?? null;
-}
-public function get_customer_name($id) {
-  $row = $this->db->select('name')->from('customers')->where('id', (int)$id)->get()->row_array();
-  return $row['name'] ?? null;
-}
+    // filtered count
+    $filtered = $this->db->count_all_results('', FALSE);
 
-// Ledger insert (generic)
-public function insert_ledger($data) {
-  $this->db->insert('ledger', $data);
-  return $this->db->insert_id();
-}
+    // order safety map
+    $safeMap = ['ref_no', 'payment_date', 'type', 'mode', 'amount', 'id'];
+    $order_by = in_array($order_by, $safeMap, true) ? $order_by : 'payment_date';
+    $order_dir = strtolower($order_dir) === 'asc' ? 'asc' : 'desc';
+    $this->db->order_by($order_by, $order_dir);
 
-// On payment update, you may want to replace ledger row(s) for that payment:
-public function delete_ledger_by_payment($payment_id) {
-  $this->db->where(['ref_type'=>'payment','ref_id'=>(int)$payment_id])->delete('ledger');
-  return $this->db->affected_rows();
-}
+    // page slice
+    if ($length > 0) $this->db->limit($length, $start);
 
-public function get_products() {
-  return $this->db->get_where('products', array('created_by' => $_SESSION['user_id']))->result_array();
-}
+    $rows = $this->db->get()->result_array();
 
-public function get_suppliers() {
-  return $this->db->get_where('suppliers', array('created_by' => $_SESSION['user_id']))->result_array();
-}
+    return ['total' => $total, 'filtered' => $filtered, 'rows' => $rows];
+  }
 
-public function get_purchases() {
-  return $this->db->get_where('purchases', array('created_by' => $_SESSION['user_id']))->result_array();
-}
+  // Resolve party label (helper): fetch name quickly
+  public function get_supplier_name($id)
+  {
+    $row = $this->db->select('name')->from('suppliers')->where('id', (int)$id)->get()->row_array();
+    return $row['name'] ?? null;
+  }
+  public function get_customer_name($id)
+  {
+    $row = $this->db->select('name')->from('customers')->where('id', (int)$id)->get()->row_array();
+    return $row['name'] ?? null;
+  }
 
-public function get_customers() {
-  return $this->db->get_where('customers', array('created_by' => $_SESSION['user_id']))->result_array();
-}
+  // Ledger insert (generic)
+  public function insert_ledger($data)
+  {
+    $this->db->insert('ledger', $data);
+    return $this->db->insert_id();
+  }
 
-public function get_invoices() {
-  return $this->db->get_where('sales', array('created_by' => $_SESSION['user_id']))->result_array();
-}
+  // On payment update, you may want to replace ledger row(s) for that payment:
+  public function delete_ledger_by_payment($payment_id)
+  {
+    $this->db->where([
+      'ref_type'   => 'payment',
+      'ref_id'     => (int)$payment_id,
+      'created_by' => (int)$_SESSION['user_id']
+    ])->delete('ledger');
+    return $this->db->affected_rows();
+  }
 
+  public function get_products()
+  {
+    return $this->db->get_where('products', array('created_by' => $_SESSION['user_id']))->result_array();
+  }
+
+  public function get_suppliers()
+  {
+    return $this->db->get_where('suppliers', array('created_by' => $_SESSION['user_id']))->result_array();
+  }
+
+  public function get_purchases()
+  {
+    return $this->db->get_where('purchases', array('created_by' => $_SESSION['user_id']))->result_array();
+  }
+
+  public function get_customers()
+  {
+    return $this->db->get_where('customers', array('created_by' => $_SESSION['user_id']))->result_array();
+  }
+
+  public function get_invoices()
+  {
+    return $this->db->get_where('sales', array('created_by' => $_SESSION['user_id']))->result_array();
+  }
 }
