@@ -22,6 +22,10 @@
               </div>
               <div class="logo-element">INV</div>
             </li>
+              <li class="<?= isset($pagename) &&  $pagename == "dashboard" ? "active" : ""  ?>">
+              <a href="<?= base_url() ?>dashboard"><i class="fa fa-th-large"></i>
+                <span class="nav-label">Dashboard</span></a>
+            </li>
             <li class="<?= isset($pagename) &&  $pagename == "product" ? "active" : ""  ?>">
               <a href="<?= base_url() ?>product"><i class="fa fa-diamond"></i>
                 <span class="nav-label">Products</span></a>
@@ -54,9 +58,12 @@
               <a href="<?= base_url() ?>payment"><i class="fa fa-money"></i>
                 <span class="nav-label">Payments</span></a>
             </li>
-            <li>
-              <a href="#"><i class="fa fa-diamond"></i>
-                <span class="nav-label">Reports</span></a>
+            <li class="<?= isset($pagetab) &&  $pagetab == "report" ? "active" : ""  ?>" >
+              <a href="#"><i class="fa fa-sitemap"></i> <span class="nav-label">Reports </span><span class="fa arrow"></span></a>
+              <ul class="nav nav-second-level collapse">
+                <li class="<?= isset($pagename) &&  $pagename == "stock_report" ? "active" : ""  ?>"><a href="<?= base_url() ?>stock-report">Stock</a></li>
+                <li class="<?= isset($pagename) &&  $pagename == "ledger_report" ? "active" : ""  ?>"><a href="<?= base_url() ?>ledger-report">Ledgers</a></li>
+              </ul>
             </li>
           </ul>
         </div>

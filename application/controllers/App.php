@@ -1663,4 +1663,160 @@ class App extends CI_Controller
 
         echo json_encode(['success' => 1, 'message' => 'Payment updated']);
     }
+
+    // Show page
+    public function stock_report()
+    {
+        $this->check_login();
+        // for filter dropdown
+        $data['products'] = $this->App_model->get_products();
+        $this->load->view('stock_report', $data);
+    }
+
+    // DataTables server-side
+    public function stock_report_data()
+    {
+        $this->check_login();
+
+        $draw    = (int)$this->input->post('draw');
+        $start   = (int)$this->input->post('start');
+        $length  = (int)$this->input->post('length');
+
+        // ordering
+        $order     = $this->input->post('order')[0] ?? null;
+        $columns   = $this->input->post('columns') ?? [];
+        $order_by  = 'updated_at';
+        $order_dir = 'desc';
+        if ($order) {
+            $idx = (int)$order['column'];
+            $order_dir = strtolower($order['dir']) === 'asc' ? 'asc' : 'desc';
+            $safe = ['product_name', 'batch_no', 'qty', 'last_cost', 'updated_at', 'value'];
+            $col  = $columns[$idx]['data'] ?? 'updated_at';
+            $order_by = in_array($col, $safe, true) ? $col : 'updated_at';
+        }
+
+        // filters
+        $filters = [
+            'product_id' => $this->input->post('product_id', TRUE),
+            'batch_no'   => trim((string)$this->input->post('batch_no', TRUE)),
+            'qty_min'    => $this->input->post('qty_min', TRUE),
+            'qty_max'    => $this->input->post('qty_max', TRUE),
+            'only_instock' => (int)($this->input->post('only_instock') ?? 0),
+            'date_from'  => $this->input->post('date_from', TRUE), // Y-m-d
+            'date_to'    => $this->input->post('date_to', TRUE),   // Y-m-d
+        ];
+
+        $result = $this->App_model->datatable_stock($start, $length, $order_by, $order_dir, $filters);
+
+        echo json_encode([
+            'draw'            => $draw,
+            'recordsTotal'    => $result['total'],
+            'recordsFiltered' => $result['filtered'],
+            'data'            => $result['rows'],
+        ]);
+    }
+
+    // Page
+public function ledger_report()
+{
+    $this->check_login();
+    $data['customers'] = $this->App_model->get_customers();
+    $data['suppliers'] = $this->App_model->get_suppliers();
+    $this->load->view('ledger_report', $data);
+}
+
+// Data for DataTables
+public function ledger_report_data()
+{
+    $this->check_login();
+
+    $draw   = (int)$this->input->post('draw');
+    $start  = (int)$this->input->post('start');
+    $length = (int)$this->input->post('length');
+
+    // order
+    $order     = $this->input->post('order')[0] ?? null;
+    $columns   = $this->input->post('columns') ?? [];
+    $order_by  = 'entry_date';
+    $order_dir = 'asc';
+    if ($order) {
+        $idx = (int)$order['column'];
+        $order_dir = strtolower($order['dir']) === 'desc' ? 'desc' : 'asc';
+        $safe = ['entry_date','ref_type','ref_no','description','debit','credit'];
+        $col  = $columns[$idx]['data'] ?? 'entry_date';
+        $order_by = in_array($col, $safe, true) ? $col : 'entry_date';
+    }
+
+    // filters
+    $filters = [
+        'party_type' => $this->input->post('party_type', TRUE),   // customer|supplier|''(all)
+        'party_id'   => $this->input->post('party_id', TRUE),     // int or ''
+        'ref_type'   => $this->input->post('ref_type', TRUE),     // purchase|sales|...|payment|''(all)
+        'date_from'  => $this->input->post('date_from', TRUE),    // Y-m-d
+        'date_to'    => $this->input->post('date_to', TRUE),      // Y-m-d
+        'q'          => $this->input->post('search')['value'] ?? ''
+    ];
+
+    $result = $this->App_model->datatable_ledger($start, $length, $order_by, $order_dir, $filters);
+
+    echo json_encode([
+        'draw'            => $draw,
+        'recordsTotal'    => $result['total'],
+        'recordsFiltered' => $result['filtered'],
+        'data'            => $result['rows'],
+        // helpful summary numbers for footer
+        'opening'         => $result['opening'],
+        'sum_debit'       => $result['sum_debit'],
+        'sum_credit'      => $result['sum_credit'],
+        'closing'         => $result['closing'],
+    ]);
+}
+
+// --- DASHBOARD DATA: KPIs + Charts ---
+public function dashboard_stats()
+{
+    $this->check_login();
+    $uid = (int)$_SESSION['user_id'];
+
+    // date helpers
+    $today      = date('Y-m-d');
+    $monthStart = date('Y-m-01');
+    $yearStart  = date('Y-01-01');
+
+    $out = [
+        // KPI cards
+        'today_sales'        => $this->App_model->sum_sales_total($uid, $today, $today),
+        'today_purchases'    => $this->App_model->sum_purchases_total($uid, $today, $today),
+        'mtd_sales'          => $this->App_model->sum_sales_total($uid, $monthStart, $today),
+        'mtd_purchases'      => $this->App_model->sum_purchases_total($uid, $monthStart, $today),
+        'receivables'        => $this->App_model->ledger_balance_by_party_type($uid, 'customer'), // credit - debit
+        'payables'           => $this->App_model->ledger_balance_by_party_type($uid, 'supplier'), // credit - debit (likely negative)
+        'stock_items'        => $this->App_model->stock_distinct_products_count($uid),
+        'low_stock'          => $this->App_model->stock_low_items_count($uid, 10), // threshold=10 (adjust)
+
+        // Charts
+        'sales_vs_purchases_12m' => $this->App_model->series_sales_vs_purchases_last_12m($uid),
+        'payments_breakdown_6m'  => $this->App_model->series_payments_breakdown_6m($uid),
+        'top_5_products'         => $this->App_model->series_top_products_sales($uid, 5),
+    ];
+
+    echo json_encode(['success' => 1, 'data' => $out]);
+}
+
+// --- DASHBOARD DATA: Latest activity table ---
+public function dashboard_latest()
+{
+    $this->check_login();
+    $uid = (int)$_SESSION['user_id'];
+
+    $out = [
+        'purchases' => $this->App_model->latest_purchases($uid, 5),
+        'sales'     => $this->App_model->latest_sales($uid, 5),
+        'payments'  => $this->App_model->latest_payments($uid, 5),
+    ];
+
+    echo json_encode(['success' => 1, 'data' => $out]);
+}
+
+
 }

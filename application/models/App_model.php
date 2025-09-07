@@ -753,4 +753,337 @@ class App_model extends CI_Model
   {
     return $this->db->get_where('sales', array('created_by' => $_SESSION['user_id']))->result_array();
   }
+
+  public function datatable_stock($start, $length, $order_by, $order_dir, $filters)
+  {
+    $uid = (int)$_SESSION['user_id'];
+
+    // --- Base: join products for product_name
+    $this->db->from('stock s')
+      ->join('products p', 'p.id = s.product_id', 'left')
+      ->where('s.created_by', $uid);
+
+    // Total (tenant-scoped)
+    $total = $this->db->count_all_results();
+
+    // Rebuild for filtered query
+    $this->db->from('stock s')
+      ->join('products p', 'p.id = s.product_id', 'left')
+      ->where('s.created_by', $uid);
+
+    // --- Filters ---
+    if (!empty($filters['product_id'])) {
+      $this->db->where('s.product_id', (int)$filters['product_id']);
+    }
+    if (!empty($filters['batch_no'])) {
+      $this->db->like('s.batch_no', $filters['batch_no']);
+    }
+    if (!empty($filters['qty_min']) || $filters['qty_min'] === '0') {
+      $this->db->where('s.qty >=', (int)$filters['qty_min']);
+    }
+    if (!empty($filters['qty_max']) || $filters['qty_max'] === '0') {
+      $this->db->where('s.qty <=', (int)$filters['qty_max']);
+    }
+    if (!empty($filters['only_instock'])) {
+      $this->db->where('s.qty >', 0);
+    }
+    // Date range on updated_at
+    if (!empty($filters['date_from'])) {
+      $this->db->where('DATE(s.updated_at) >=', $filters['date_from']);
+    }
+    if (!empty($filters['date_to'])) {
+      $this->db->where('DATE(s.updated_at) <=', $filters['date_to']);
+    }
+
+    // Count after filters
+    $filtered = $this->db->count_all_results('', FALSE);
+
+    // Select + order + page
+    $this->db->select('s.product_id, p.product_name, s.batch_no, s.qty, s.last_cost, s.updated_at');
+    $safe = ['product_name', 'batch_no', 'qty', 'last_cost', 'updated_at'];
+    $order_by  = in_array($order_by, $safe, true) ? $order_by : 'updated_at';
+    $order_dir = strtolower($order_dir) === 'asc' ? 'asc' : 'desc';
+    $this->db->order_by($order_by, $order_dir);
+
+    if ($length > 0) $this->db->limit($length, $start);
+
+    $rows = $this->db->get()->result_array();
+
+    // Add computed value (qty * last_cost)
+    foreach ($rows as &$r) {
+      $q = is_numeric($r['qty']) ? (float)$r['qty'] : 0;
+      $c = is_numeric($r['last_cost']) ? (float)$r['last_cost'] : 0;
+      $r['value'] = round($q * $c, 2);
+    }
+
+    return ['total' => $total, 'filtered' => $filtered, 'rows' => $rows];
+  }
+
+  // Opening balance up to (but excluding) date_from
+  private function ledger_opening_balance($party_type, $party_id, $date_from, $uid)
+  {
+    $this->db->reset_query();                 // <<— important
+
+    $this->db->select('COALESCE(SUM(credit - debit),0) AS bal')
+      ->from('ledger')
+      ->where('created_by', (int)$uid);
+
+    if (!empty($party_type)) $this->db->where('party_type', $party_type);
+    if (!empty($party_id))   $this->db->where('party_id', (int)$party_id);
+    if (!empty($date_from))  $this->db->where('entry_date <', $date_from . ' 00:00:00');
+
+    return (float)$this->db->get()->row()->bal;
+  }
+
+  public function datatable_ledger($start, $length, $order_by, $order_dir, $filters)
+  {
+    $uid = (int)$_SESSION['user_id'];
+
+    // --- TOTAL (tenant scoped) ---
+    $this->db->reset_query();
+    $total = $this->db->from('ledger')
+      ->where('created_by', $uid)
+      ->count_all_results();
+
+    // --- FILTERED COUNT ---
+    $this->db->reset_query();
+    $this->db->from('ledger')->where('created_by', $uid);
+    if (!empty($filters['party_type'])) $this->db->where('party_type', $filters['party_type']);
+    if (!empty($filters['party_id']))   $this->db->where('party_id', (int)$filters['party_id']);
+    if (!empty($filters['ref_type']))   $this->db->where('ref_type', $filters['ref_type']);
+    if (!empty($filters['date_from']))  $this->db->where('DATE(entry_date) >=', $filters['date_from']);
+    if (!empty($filters['date_to']))    $this->db->where('DATE(entry_date) <=', $filters['date_to']);
+    if (!empty($filters['q'])) {
+      $q = $filters['q'];
+      $this->db->group_start()
+        ->like('ref_no', $q)
+        ->or_like('ref_type', $q)
+        ->or_like('description', $q)
+        ->group_end();
+    }
+    $filtered = $this->db->count_all_results();
+
+    // --- OPENING (before date_from) ---
+    $opening = $this->ledger_opening_balance(
+      $filters['party_type'] ?? '',
+      $filters['party_id']   ?? '',
+      $filters['date_from']  ?? '',
+      $uid
+    );
+
+    // --- PAGE DATA ---
+    $this->db->reset_query();
+    $this->db->select('id, entry_date, ref_type, ref_no, description, debit, credit')
+      ->from('ledger')
+      ->where('created_by', $uid);
+
+    if (!empty($filters['party_type'])) $this->db->where('party_type', $filters['party_type']);
+    if (!empty($filters['party_id']))   $this->db->where('party_id', (int)$filters['party_id']);
+    if (!empty($filters['ref_type']))   $this->db->where('ref_type', $filters['ref_type']);
+    if (!empty($filters['date_from']))  $this->db->where('DATE(entry_date) >=', $filters['date_from']);
+    if (!empty($filters['date_to']))    $this->db->where('DATE(entry_date) <=', $filters['date_to']);
+    if (!empty($filters['q'])) {
+      $q = $filters['q'];
+      $this->db->group_start()
+        ->like('ref_no', $q)
+        ->or_like('ref_type', $q)
+        ->or_like('description', $q)
+        ->group_end();
+    }
+
+    $safe = ['entry_date', 'ref_type', 'ref_no', 'description', 'debit', 'credit', 'id'];
+    $order_by  = in_array($order_by, $safe, true) ? $order_by : 'entry_date';
+    $order_dir = strtolower($order_dir) === 'desc' ? 'desc' : 'asc';
+    $this->db->order_by($order_by, $order_dir);
+
+    if ($length > 0) $this->db->limit($length, $start);
+
+    $rows = $this->db->get()->result_array();
+
+    // running/page totals
+    $running = $opening;
+    $sum_debit = 0;
+    $sum_credit = 0;
+    foreach ($rows as &$r) {
+      $d = (float)$r['debit'];
+      $c = (float)$r['credit'];
+      $running += ($c - $d);
+      $sum_debit  += $d;
+      $sum_credit += $c;
+      $r['balance'] = $running;
+    }
+    $closing = $running;
+
+    return [
+      'total'     => $total,
+      'filtered'  => $filtered,
+      'rows'      => $rows,
+      'opening'   => $opening,
+      'sum_debit' => $sum_debit,
+      'sum_credit' => $sum_credit,
+      'closing'   => $closing,
+    ];
+  }
+
+  // ---- KPI sums ----
+public function sum_sales_total($uid, $date_from, $date_to) {
+  $this->db->select('COALESCE(SUM(total_amount),0) AS t')
+           ->from('sales')
+           ->where('created_by', (int)$uid)
+           ->where('DATE(sale_date) >=', $date_from)
+           ->where('DATE(sale_date) <=', $date_to);
+  return (float)$this->db->get()->row()->t;
+}
+
+public function sum_purchases_total($uid, $date_from, $date_to) {
+  $this->db->select('COALESCE(SUM(total_amount),0) AS t')
+           ->from('purchases')
+           ->where('created_by', (int)$uid)
+           ->where('DATE(purchase_date) >=', $date_from)
+           ->where('DATE(purchase_date) <=', $date_to);
+  return (float)$this->db->get()->row()->t;
+}
+
+// credit - debit for a party type
+public function ledger_balance_by_party_type($uid, $party_type) {
+  $this->db->select('COALESCE(SUM(credit - debit),0) AS bal')
+           ->from('ledger')
+           ->where('created_by', (int)$uid)
+           ->where('party_type', $party_type);
+  return (float)$this->db->get()->row()->bal;
+}
+
+// ---- Stock info ----
+public function stock_distinct_products_count($uid) {
+  $this->db->select('COUNT(DISTINCT product_id) AS c')
+           ->from('stock')
+           ->where('created_by', (int)$uid);
+  $row = $this->db->get()->row_array();
+  return (int)($row['c'] ?? 0);
+}
+
+public function stock_low_items_count($uid, $threshold = 10) {
+  $this->db->select('COUNT(*) AS c')
+           ->from('stock')
+           ->where('created_by', (int)$uid)
+           ->where('qty <=', (int)$threshold);
+  $row = $this->db->get()->row_array();
+  return (int)($row['c'] ?? 0);
+}
+
+// ---- Chart series ----
+public function series_sales_vs_purchases_last_12m($uid) {
+  // Build month labels (YYYY-MM) and sums
+  $labels = [];
+  $sales  = [];
+  $purch  = [];
+  for ($i = 11; $i >= 0; $i--) {
+    $ym   = date('Y-m', strtotime("-$i months"));
+    $from = $ym.'-01';
+    $to   = date('Y-m-t', strtotime($from));
+
+    $labels[] = $ym;
+    $sales[]  = $this->sum_sales_total($uid, $from, $to);
+    $purch[]  = $this->sum_purchases_total($uid, $from, $to);
+  }
+  return ['labels'=>$labels, 'sales'=>$sales, 'purchases'=>$purch];
+}
+
+public function series_payments_breakdown_6m($uid) {
+  $labels=[]; $customer=[]; $supplier=[];
+  for ($i=5; $i>=0; $i--) {
+    $ym = date('Y-m', strtotime("-$i months"));
+    $from = $ym.'-01';
+    $to   = date('Y-m-t', strtotime($from));
+
+    // customers (incoming = sum amount where type='customer')
+    $this->db->select('COALESCE(SUM(amount),0) AS t')
+             ->from('payments')
+             ->where('created_by', (int)$uid)
+             ->where('type','customer')
+             ->where('DATE(payment_date) >=', $from)
+             ->where('DATE(payment_date) <=', $to);
+    $cin = (float)$this->db->get()->row()->t;
+
+    // suppliers (outgoing)
+    $this->db->select('COALESCE(SUM(amount),0) AS t')
+             ->from('payments')
+             ->where('created_by', (int)$uid)
+             ->where('type','supplier')
+             ->where('DATE(payment_date) >=', $from)
+             ->where('DATE(payment_date) <=', $to);
+    $sout = (float)$this->db->get()->row()->t;
+
+    $labels[]   = $ym;
+    $customer[] = $cin;
+    $supplier[] = $sout;
+  }
+  return ['labels'=>$labels, 'customer'=>$customer, 'supplier'=>$supplier];
+}
+
+public function series_top_products_sales($uid, $limit=5) {
+  // Parse sales.items JSON and aggregate qty * price by product_id
+  // (Simple & portable approach)
+  $this->db->select('id, items')
+           ->from('sales')
+           ->where('created_by', (int)$uid)
+           ->order_by('id','DESC');
+  $rows = $this->db->get()->result_array();
+
+  $agg = []; // product_id => amount
+  foreach ($rows as $r) {
+    $items = json_decode($r['items'], true);
+    if (!is_array($items)) continue;
+    foreach ($items as $it) {
+      $pid = (int)($it['product_id'] ?? 0);
+      $qty = (int)($it['qty'] ?? 0);
+      $prc = (float)($it['price'] ?? 0);
+      if ($pid<=0) continue;
+      $agg[$pid] = ($agg[$pid] ?? 0) + ($qty * $prc);
+    }
+  }
+
+  arsort($agg); // high to low
+  $top = array_slice($agg, 0, $limit, true);
+
+  // resolve product names
+  $labels = []; $values=[];
+  if ($top) {
+    $ids = array_keys($top);
+    $prows = $this->db->select('id, product_name')->from('products')
+                      ->where_in('id', $ids)->get()->result_array();
+    $nameById = [];
+    foreach ($prows as $p) $nameById[(int)$p['id']] = $p['product_name'];
+
+    foreach ($top as $pid=>$amt) {
+      $labels[] = $nameById[$pid] ?? ('#'.$pid);
+      $values[] = (float)$amt;
+    }
+  }
+  return ['labels'=>$labels, 'values'=>$values];
+}
+
+// ---- Latest activity ----
+public function latest_purchases($uid, $limit=5) {
+  return $this->db->select('ref_no, purchase_date, total_amount')
+                  ->from('purchases')
+                  ->where('created_by', (int)$uid)
+                  ->order_by('id','DESC')
+                  ->limit($limit)->get()->result_array();
+}
+public function latest_sales($uid, $limit=5) {
+  return $this->db->select('invoice_no, sale_date, total_amount, customer_id')
+                  ->from('sales')
+                  ->where('created_by', (int)$uid)
+                  ->order_by('id','DESC')
+                  ->limit($limit)->get()->result_array();
+}
+public function latest_payments($uid, $limit=5) {
+  return $this->db->select('ref_no, payment_date, type, amount, mode')
+                  ->from('payments')
+                  ->where('created_by', (int)$uid)
+                  ->order_by('id','DESC')
+                  ->limit($limit)->get()->result_array();
+}
+
 }

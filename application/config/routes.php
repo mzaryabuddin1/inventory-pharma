@@ -76,3 +76,16 @@ $route["payments-list"]     = "app/payments_list";
 $route["payment/(:num)"]    = "app/get_payment/$1";
 $route["payment-update"]    = "app/update_payment_submit";
 
+
+$route['stock-report']       = 'app/stock_report';
+$route['stock-report-data']  = 'app/stock_report_data';
+
+$route['ledger-report']       = 'app/ledger_report';
+$route['ledger-report-data']  = 'app/ledger_report_data';
+
+
+$route['dashboard']        = 'app/dashboard';
+$route['dashboard-stats']  = 'app/dashboard_stats';   // JSON for cards + charts
+$route['dashboard-latest'] = 'app/dashboard_latest';  // JSON for recent transactions
+
+
