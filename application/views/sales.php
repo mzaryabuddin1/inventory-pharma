@@ -35,9 +35,9 @@
                 <select name="customer_id" class="form-control" required>
                   <option value="1">Select customer</option>
                   <!-- TODO: populate customers -->
-                    <?php foreach ($customers as $customer) : ?>
-                      <option value="<?= $customer['id'] ?>"><?= $customer['name'] ?></option>  
-                    <?php endforeach; ?>
+                  <?php foreach ($customers as $customer) : ?>
+                    <option value="<?= $customer['id'] ?>"><?= $customer['name'] ?></option>
+                  <?php endforeach; ?>
                 </select>
               </div>
             </div>
@@ -53,8 +53,8 @@
                     <select name="product_id[]" class="form-control" required>
                       <option value="1">Select product</option>
                       <!-- TODO: populate products -->
-                        <?php foreach ($products as $product) : ?>
-                        <option value="<?= $product['id'] ?>"><?= $product['product_name'] ?></option>  
+                      <?php foreach ($products as $product) : ?>
+                        <option value="<?= $product['id'] ?>"><?= $product['product_name'] ?></option>
                       <?php endforeach; ?>
                     </select>
                   </div>
@@ -88,7 +88,11 @@
             </div>
 
             <div class="sk-spinner sk-spinner-wave d-none" id="saleSpinner">
-              <div class="sk-rect1"></div><div class="sk-rect2"></div><div class="sk-rect3"></div><div class="sk-rect4"></div><div class="sk-rect5"></div>
+              <div class="sk-rect1"></div>
+              <div class="sk-rect2"></div>
+              <div class="sk-rect3"></div>
+              <div class="sk-rect4"></div>
+              <div class="sk-rect5"></div>
             </div>
 
             <div class="form-group row">
@@ -112,6 +116,13 @@
           <div class="ibox-tools"><a class="collapse-link"><i class="fa fa-chevron-up"></i></a></div>
         </div>
         <div class="ibox-content">
+          <div class="sk-spinner sk-spinner-wave">
+            <div class="sk-rect1"></div>
+            <div class="sk-rect2"></div>
+            <div class="sk-rect3"></div>
+            <div class="sk-rect4"></div>
+            <div class="sk-rect5"></div>
+          </div>
           <div class="table-responsive">
             <table class="table table-striped table-bordered table-hover" id="salesTable">
               <thead>
@@ -156,9 +167,9 @@
               <select name="customer_id" id="edit_customer_id" class="form-control" required>
                 <option value="">Select customer</option>
                 <!-- TODO -->
-                   <?php foreach ($customers as $customer) : ?>
-                      <option value="<?= $customer['id'] ?>"><?= $customer['name'] ?></option>  
-                    <?php endforeach; ?>
+                <?php foreach ($customers as $customer) : ?>
+                  <option value="<?= $customer['id'] ?>"><?= $customer['name'] ?></option>
+                <?php endforeach; ?>
               </select>
             </div>
           </div>
@@ -173,9 +184,9 @@
                 <div class="col-md-4">
                   <select name="product_id[]" class="form-control" required>
                     <option value="">Select product</option>
-                      <?php foreach ($products as $product) : ?>
-                        <option value="<?= $product['id'] ?>"><?= $product['product_name'] ?></option>  
-                      <?php endforeach; ?>
+                    <?php foreach ($products as $product) : ?>
+                      <option value="<?= $product['id'] ?>"><?= $product['product_name'] ?></option>
+                    <?php endforeach; ?>
                   </select>
                 </div>
                 <div class="col-md-2"><input type="text" name="batch_no[]" class="form-control" placeholder="Batch No" required></div>
@@ -189,7 +200,11 @@
         </div>
         <div class="modal-footer">
           <div class="sk-spinner sk-spinner-wave d-none" id="saleEditSpinner">
-            <div class="sk-rect1"></div><div class="sk-rect2"></div><div class="sk-rect3"></div><div class="sk-rect4"></div><div class="sk-rect5"></div>
+            <div class="sk-rect1"></div>
+            <div class="sk-rect2"></div>
+            <div class="sk-rect3"></div>
+            <div class="sk-rect4"></div>
+            <div class="sk-rect5"></div>
           </div>
           <button type="button" class="btn btn-white" data-dismiss="modal">Close</button>
           <button type="submit" class="btn btn-primary" id="saleEditSubmitBtn">Update</button>
@@ -207,28 +222,28 @@
   var salesDT;
 
   // add/remove rows (Add form)
-  $(document).on('click', '#sale-items-wrapper .add-item', function(){
+  $(document).on('click', '#sale-items-wrapper .add-item', function() {
     const tpl = document.getElementById('sale-item-row-tpl').content.cloneNode(true);
     $('#sale-items-wrapper').append(tpl);
   });
-  $(document).on('click', '#sale-items-wrapper .remove-item', function(){
+  $(document).on('click', '#sale-items-wrapper .remove-item', function() {
     $(this).closest('.item-row').remove();
   });
 
   // submit Add
-  $("#saleAddForm").on("submit", function(e){
+  $("#saleAddForm").on("submit", function(e) {
     e.preventDefault();
-    const items=[];
-    $("#sale-items-wrapper .item-row").each(function(){
+    const items = [];
+    $("#sale-items-wrapper .item-row").each(function() {
       const product_id = $(this).find('[name="product_id[]"]').val();
-      const batch_no   = $(this).find('[name="batch_no[]"]').val();
-      const qty        = $(this).find('[name="qty[]"]').val();
-      const price      = $(this).find('[name="price[]"]').val();
-      if(product_id && batch_no && qty){
+      const batch_no = $(this).find('[name="batch_no[]"]').val();
+      const qty = $(this).find('[name="qty[]"]').val();
+      const price = $(this).find('[name="price[]"]').val();
+      if (product_id && batch_no && qty) {
         items.push({
-          product_id: parseInt(product_id,10),
+          product_id: parseInt(product_id, 10),
           batch_no,
-          qty: parseInt(qty,10),
+          qty: parseInt(qty, 10),
           price: parseFloat(price || 0)
         });
       }
@@ -238,35 +253,38 @@
     fd.append('items', JSON.stringify(items));
 
     $.ajax({
-      url: "<?= base_url() .'add-sale-submit'; ?>",
+      url: "<?= base_url() . 'add-sale-submit'; ?>",
       type: "POST",
       data: fd,
       processData: false,
       contentType: false,
       cache: false,
-      beforeSend: function(){
+      beforeSend: function() {
         $("#saleSpinner").removeClass("d-none");
         $("#saleError").addClass("d-none").empty();
         $("#saleAddForm :submit").prop("disabled", true).addClass("d-none");
       },
-      success: function(res){
+      success: function(res) {
         $("#saleSpinner").addClass("d-none");
         $("#saleAddForm :submit").prop("disabled", false).removeClass("d-none");
-        let obj={}; try{ obj=JSON.parse(res);}catch(e){}
-        if(obj.error){
+        let obj = {};
+        try {
+          obj = JSON.parse(res);
+        } catch (e) {}
+        if (obj.error) {
           $("#saleError").html(obj.error).removeClass("d-none");
           toastr.error("Please check errors list!", "Error");
           return;
         }
-        if(obj.success){
+        if (obj.success) {
           toastr.success("Invoice saved", "Success");
           $("#saleResetBtn").trigger("click");
-          if (salesDT) salesDT.ajax.reload(null,false);
+          if (salesDT) salesDT.ajax.reload(null, false);
           return;
         }
-        toastr.error("Unexpected response","Error");
+        toastr.error("Unexpected response", "Error");
       },
-      error: function(){
+      error: function() {
         $("#saleSpinner").addClass("d-none");
         $("#saleAddForm :submit").prop("disabled", false).removeClass("d-none");
         toastr.error("Error while sending request!", "Error");
@@ -275,56 +293,83 @@
   });
 
   // DataTable
-  $(document).ready(function(){
+  $(document).ready(function() {
     salesDT = $("#salesTable").DataTable({
-      processing:true, serverSide:true, pageLength:25, responsive:true, searchDelay:500,
-      ajax:{ url:"<?= base_url()  . 'sales-list'; ?>", type:"POST" },
-      columns:[
-        { data:"invoice_no", title:"Invoice No" },
-        { data:"sale_date",  title:"Date" },
-        { data:"total_amount", title:"Total" },
-        { data:"id", orderable:false, searchable:false, render: id => `
+      processing: true,
+      serverSide: true,
+      pageLength: 25,
+      responsive: true,
+      searchDelay: 500,
+      ajax: {
+        url: "<?= base_url()  . 'sales-list'; ?>",
+        type: "POST"
+      },
+      columns: [{
+          data: "invoice_no",
+          title: "Invoice No"
+        },
+        {
+          data: "sale_date",
+          title: "Date"
+        },
+        {
+          data: "total_amount",
+          title: "Total"
+        },
+        {
+          data: "id",
+          orderable: false,
+          searchable: false,
+          render: id => `
           <div class="btn-group btn-group-sm">
             <button class="btn btn-warning btn-edit-sale" data-id="${id}">Edit</button>
           </div>`
         }
       ],
-      order:[[1,"desc"]]
+      order: [
+        [1, "desc"]
+      ]
     });
   });
 
   // open edit modal
-  $(document).on('click', '.btn-edit-sale', function(){
-    const id=$(this).data('id');
+  $(document).on('click', '.btn-edit-sale', function() {
+    const id = $(this).data('id');
     $("#saleEditError").addClass('d-none').empty();
     $("#sale-edit-items-wrapper").empty();
 
     $.ajax({
-      url: "<?= base_url() . 'sale/'; ?>"+id,
+      url: "<?= base_url() . 'sale/'; ?>" + id,
       type: "GET",
-      beforeSend: function(){
+      beforeSend: function() {
         $("#saleEditSpinner").removeClass('d-none');
         $('#iboxSale .ibox-content').addClass('sk-loading');
       },
-      success: function(res){
+      success: function(res) {
         $("#saleEditSpinner").addClass('d-none');
         $('#iboxSale .ibox-content').removeClass('sk-loading');
-        let obj={}; try{ obj=JSON.parse(res);}catch(e){}
-        if(obj.error){ toastr.error(obj.error.replace(/<[^>]*>?/gm,''),"Error"); return; }
+        let obj = {};
+        try {
+          obj = JSON.parse(res);
+        } catch (e) {}
+        if (obj.error) {
+          toastr.error(obj.error.replace(/<[^>]*>?/gm, ''), "Error");
+          return;
+        }
 
-        const r=obj.data;
+        const r = obj.data;
         $("#edit_sale_id").val(r.id);
         $("#edit_invoice_no").val(r.invoice_no);
-        $("#edit_sale_date").val(r.sale_date.replace(' ','T'));
+        $("#edit_sale_date").val(r.sale_date.replace(' ', 'T'));
         $("#edit_customer_id").val(r.customer_id);
 
         const items = Array.isArray(r.items) ? r.items : [];
-        if(!items.length){
-          const tpl=document.getElementById('sale-edit-item-row-tpl').content.cloneNode(true);
+        if (!items.length) {
+          const tpl = document.getElementById('sale-edit-item-row-tpl').content.cloneNode(true);
           $("#sale-edit-items-wrapper").append(tpl);
-        }else{
-          items.forEach(it=>{
-            const tpl=document.getElementById('sale-edit-item-row-tpl').content.cloneNode(true);
+        } else {
+          items.forEach(it => {
+            const tpl = document.getElementById('sale-edit-item-row-tpl').content.cloneNode(true);
             $(tpl).find('[name="product_id[]"]').val(it.product_id);
             $(tpl).find('[name="batch_no[]"]').val(it.batch_no);
             $(tpl).find('[name="qty[]"]').val(it.qty);
@@ -335,71 +380,79 @@
 
         $("#editSaleModal").modal('show');
       },
-      error: function(){
+      error: function() {
         $("#saleEditSpinner").addClass('d-none');
         $('#iboxSale .ibox-content').removeClass('sk-loading');
-        toastr.error("Failed to load invoice","Error");
+        toastr.error("Failed to load invoice", "Error");
       }
     });
   });
 
   // add/remove rows in edit modal
-  $("#saleEditAddItem").on('click', function(){
-    const tpl=document.getElementById('sale-edit-item-row-tpl').content.cloneNode(true);
+  $("#saleEditAddItem").on('click', function() {
+    const tpl = document.getElementById('sale-edit-item-row-tpl').content.cloneNode(true);
     $("#sale-edit-items-wrapper").append(tpl);
   });
-  $(document).on('click', '#sale-edit-items-wrapper .remove-item', function(){
+  $(document).on('click', '#sale-edit-items-wrapper .remove-item', function() {
     $(this).closest('.item-row').remove();
   });
 
   // submit edit
-  $("#saleEditForm").on("submit", function(e){
+  $("#saleEditForm").on("submit", function(e) {
     e.preventDefault();
-    const items=[];
-    $("#sale-edit-items-wrapper .item-row").each(function(){
-      const product_id=$(this).find('[name="product_id[]"]').val();
-      const batch_no=$(this).find('[name="batch_no[]"]').val();
-      const qty=$(this).find('[name="qty[]"]').val();
-      const price=$(this).find('[name="price[]"]').val();
-      if(product_id && batch_no && qty){
-        items.push({ product_id:parseInt(product_id,10), batch_no, qty:parseInt(qty,10), price:parseFloat(price||0) });
+    const items = [];
+    $("#sale-edit-items-wrapper .item-row").each(function() {
+      const product_id = $(this).find('[name="product_id[]"]').val();
+      const batch_no = $(this).find('[name="batch_no[]"]').val();
+      const qty = $(this).find('[name="qty[]"]').val();
+      const price = $(this).find('[name="price[]"]').val();
+      if (product_id && batch_no && qty) {
+        items.push({
+          product_id: parseInt(product_id, 10),
+          batch_no,
+          qty: parseInt(qty, 10),
+          price: parseFloat(price || 0)
+        });
       }
     });
     const fd = new FormData(this);
     fd.append('items', JSON.stringify(items));
 
     $.ajax({
-      url:"<?= base_url() . 'sale-update'; ?>",
-      type:"POST",
+      url: "<?= base_url() . 'sale-update'; ?>",
+      type: "POST",
       data: fd,
-      processData:false,
-      contentType:false,
-      cache:false,
-      beforeSend:function(){
+      processData: false,
+      contentType: false,
+      cache: false,
+      beforeSend: function() {
         $("#saleEditSubmitBtn").prop("disabled", true);
         $("#saleEditSpinner").removeClass('d-none');
       },
-      success:function(res){
+      success: function(res) {
         $("#saleEditSpinner").addClass('d-none');
         $("#saleEditSubmitBtn").prop("disabled", false);
-        let obj={}; try{ obj=JSON.parse(res);}catch(e){}
-        if(obj.error){
+        let obj = {};
+        try {
+          obj = JSON.parse(res);
+        } catch (e) {}
+        if (obj.error) {
           $("#saleEditError").html(obj.error).removeClass('d-none');
-          toastr.error("Please check errors list!","Error");
+          toastr.error("Please check errors list!", "Error");
           return;
         }
-        if(obj.success){
-          toastr.success("Invoice updated","Success");
+        if (obj.success) {
+          toastr.success("Invoice updated", "Success");
           $("#editSaleModal").modal('hide');
-          if (salesDT) salesDT.ajax.reload(null,false);
+          if (salesDT) salesDT.ajax.reload(null, false);
           return;
         }
-        toastr.error("Unexpected response","Error");
+        toastr.error("Unexpected response", "Error");
       },
-      error:function(){
+      error: function() {
         $("#saleEditSpinner").addClass('d-none');
         $("#saleEditSubmitBtn").prop("disabled", false);
-        toastr.error("Error while sending request!","Error");
+        toastr.error("Error while sending request!", "Error");
       }
     });
   });

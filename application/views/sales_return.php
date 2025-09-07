@@ -30,9 +30,9 @@
               <div class="col-sm-4">
                 <select name="sale_id" class="form-control" required>
                   <option value="1">Select invoice</option>
-                     <?php foreach ($invoices as $invoice) : ?>
-                      <option value="<?= $invoice['id'] ?>"><?= $invoice['invoice_no'] ?></option>  
-                    <?php endforeach; ?>
+                  <?php foreach ($invoices as $invoice) : ?>
+                    <option value="<?= $invoice['id'] ?>"><?= $invoice['invoice_no'] ?></option>
+                  <?php endforeach; ?>
                   <!-- TODO -->
                 </select>
               </div>
@@ -41,7 +41,7 @@
                 <select name="customer_id" class="form-control" required>
                   <option value="1">Select customer</option>
                   <?php foreach ($customers as $customer) : ?>
-                    <option value="<?= $customer['id'] ?>"><?= $customer['name'] ?></option>  
+                    <option value="<?= $customer['id'] ?>"><?= $customer['name'] ?></option>
                   <?php endforeach; ?>
                   <!-- TODO -->
                 </select>
@@ -57,9 +57,9 @@
                   <div class="col-md-4">
                     <select name="product_id[]" class="form-control" required>
                       <option value="1">Select product</option>
-                       <?php foreach ($products as $product) : ?>
-                      <option value="<?= $product['id'] ?>"><?= $product['product_name'] ?></option>  
-                    <?php endforeach; ?>
+                      <?php foreach ($products as $product) : ?>
+                        <option value="<?= $product['id'] ?>"><?= $product['product_name'] ?></option>
+                      <?php endforeach; ?>
                     </select>
                   </div>
                   <div class="col-md-2"><input type="text" name="batch_no[]" class="form-control" placeholder="Batch No" required></div>
@@ -73,9 +73,9 @@
                   <div class="col-md-4">
                     <select name="product_id[]" class="form-control" required>
                       <option value="">Select product</option>
-                            <?php foreach ($products as $product) : ?>
-                      <option value="<?= $product['id'] ?>"><?= $product['product_name'] ?></option>  
-                    <?php endforeach; ?>
+                      <?php foreach ($products as $product) : ?>
+                        <option value="<?= $product['id'] ?>"><?= $product['product_name'] ?></option>
+                      <?php endforeach; ?>
                     </select>
                   </div>
                   <div class="col-md-2"><input type="text" name="batch_no[]" class="form-control" placeholder="Batch No" required></div>
@@ -87,7 +87,11 @@
             </div>
 
             <div class="sk-spinner sk-spinner-wave d-none" id="srSpinner">
-              <div class="sk-rect1"></div><div class="sk-rect2"></div><div class="sk-rect3"></div><div class="sk-rect4"></div><div class="sk-rect5"></div>
+              <div class="sk-rect1"></div>
+              <div class="sk-rect2"></div>
+              <div class="sk-rect3"></div>
+              <div class="sk-rect4"></div>
+              <div class="sk-rect5"></div>
             </div>
 
             <div class="form-group row">
@@ -111,6 +115,13 @@
           <div class="ibox-tools"><a class="collapse-link"><i class="fa fa-chevron-up"></i></a></div>
         </div>
         <div class="ibox-content">
+          <div class="sk-spinner sk-spinner-wave">
+            <div class="sk-rect1"></div>
+            <div class="sk-rect2"></div>
+            <div class="sk-rect3"></div>
+            <div class="sk-rect4"></div>
+            <div class="sk-rect5"></div>
+          </div>
           <div class="table-responsive">
             <table class="table table-striped table-bordered table-hover" id="srTable">
               <thead>
@@ -154,18 +165,18 @@
             <div class="col-sm-4">
               <select name="sale_id" id="edit_sr_sale_id" class="form-control" required>
                 <option value="">Select invoice</option>
-                 <?php foreach ($invoices as $invoice) : ?>
-                      <option value="<?= $invoice['id'] ?>"><?= $invoice['invoice_no'] ?></option>  
-                    <?php endforeach; ?>
+                <?php foreach ($invoices as $invoice) : ?>
+                  <option value="<?= $invoice['id'] ?>"><?= $invoice['invoice_no'] ?></option>
+                <?php endforeach; ?>
               </select>
             </div>
             <label class="col-sm-2 col-form-label">Customer</label>
             <div class="col-sm-4">
               <select name="customer_id" id="edit_sr_customer_id" class="form-control" required>
                 <option value="">Select customer</option>
-                  <?php foreach ($customers as $customer) : ?>
-                    <option value="<?= $customer['id'] ?>"><?= $customer['name'] ?></option>  
-                  <?php endforeach; ?>
+                <?php foreach ($customers as $customer) : ?>
+                  <option value="<?= $customer['id'] ?>"><?= $customer['name'] ?></option>
+                <?php endforeach; ?>
               </select>
             </div>
           </div>
@@ -180,8 +191,8 @@
                 <div class="col-md-4">
                   <select name="product_id[]" class="form-control" required>
                     <option value="">Select product</option>
-                          <?php foreach ($products as $product) : ?>
-                      <option value="<?= $product['id'] ?>"><?= $product['product_name'] ?></option>  
+                    <?php foreach ($products as $product) : ?>
+                      <option value="<?= $product['id'] ?>"><?= $product['product_name'] ?></option>
                     <?php endforeach; ?>
                   </select>
                 </div>
@@ -196,7 +207,11 @@
         </div>
         <div class="modal-footer">
           <div class="sk-spinner sk-spinner-wave d-none" id="srEditSpinner">
-            <div class="sk-rect1"></div><div class="sk-rect2"></div><div class="sk-rect3"></div><div class="sk-rect4"></div><div class="sk-rect5"></div>
+            <div class="sk-rect1"></div>
+            <div class="sk-rect2"></div>
+            <div class="sk-rect3"></div>
+            <div class="sk-rect4"></div>
+            <div class="sk-rect5"></div>
           </div>
           <button type="button" class="btn btn-white" data-dismiss="modal">Close</button>
           <button type="submit" class="btn btn-primary" id="srEditSubmitBtn">Update</button>
@@ -214,115 +229,153 @@
   var srDT;
 
   // add/remove rows (Add form)
-  $(document).on('click', '#sr-items-wrapper .add-item', function(){
-    const tpl=document.getElementById('sr-item-row-tpl').content.cloneNode(true);
+  $(document).on('click', '#sr-items-wrapper .add-item', function() {
+    const tpl = document.getElementById('sr-item-row-tpl').content.cloneNode(true);
     $("#sr-items-wrapper").append(tpl);
   });
-  $(document).on('click', '#sr-items-wrapper .remove-item', function(){
+  $(document).on('click', '#sr-items-wrapper .remove-item', function() {
     $(this).closest('.item-row').remove();
   });
 
   // submit Add
-  $("#srAddForm").on("submit", function(e){
+  $("#srAddForm").on("submit", function(e) {
     e.preventDefault();
-    const items=[];
-    $("#sr-items-wrapper .item-row").each(function(){
-      const product_id=$(this).find('[name="product_id[]"]').val();
-      const batch_no=$(this).find('[name="batch_no[]"]').val();
-      const qty=$(this).find('[name="qty[]"]').val();
-      const price=$(this).find('[name="price[]"]').val();
-      if(product_id && batch_no && qty){
-        items.push({product_id:parseInt(product_id,10),batch_no,qty:parseInt(qty,10),price:parseFloat(price||0)});
+    const items = [];
+    $("#sr-items-wrapper .item-row").each(function() {
+      const product_id = $(this).find('[name="product_id[]"]').val();
+      const batch_no = $(this).find('[name="batch_no[]"]').val();
+      const qty = $(this).find('[name="qty[]"]').val();
+      const price = $(this).find('[name="price[]"]').val();
+      if (product_id && batch_no && qty) {
+        items.push({
+          product_id: parseInt(product_id, 10),
+          batch_no,
+          qty: parseInt(qty, 10),
+          price: parseFloat(price || 0)
+        });
       }
     });
-    const fd=new FormData(this);
+    const fd = new FormData(this);
     fd.append('items', JSON.stringify(items));
 
     $.ajax({
-      url:"<?= base_url() . 'add-sales-return-submit'; ?>",
-      type:"POST", data:fd, processData:false, contentType:false, cache:false,
-      beforeSend:function(){
+      url: "<?= base_url() . 'add-sales-return-submit'; ?>",
+      type: "POST",
+      data: fd,
+      processData: false,
+      contentType: false,
+      cache: false,
+      beforeSend: function() {
         $("#srSpinner").removeClass("d-none");
         $("#srError").addClass("d-none").empty();
         $("#srAddForm :submit").prop("disabled", true).addClass("d-none");
       },
-      success:function(res){
+      success: function(res) {
         $("#srSpinner").addClass("d-none");
         $("#srAddForm :submit").prop("disabled", false).removeClass("d-none");
-        let obj={}; try{ obj=JSON.parse(res);}catch(e){}
-        if(obj.error){
+        let obj = {};
+        try {
+          obj = JSON.parse(res);
+        } catch (e) {}
+        if (obj.error) {
           $("#srError").html(obj.error).removeClass("d-none");
-          toastr.error("Please check errors list!","Error");
+          toastr.error("Please check errors list!", "Error");
           return;
         }
-        if(obj.success){
-          toastr.success("Sales return saved","Success");
+        if (obj.success) {
+          toastr.success("Sales return saved", "Success");
           $("#srResetBtn").trigger("click");
-          if (srDT) srDT.ajax.reload(null,false);
+          if (srDT) srDT.ajax.reload(null, false);
           return;
         }
-        toastr.error("Unexpected response","Error");
+        toastr.error("Unexpected response", "Error");
       },
-      error:function(){
+      error: function() {
         $("#srSpinner").addClass("d-none");
         $("#srAddForm :submit").prop("disabled", false).removeClass("d-none");
-        toastr.error("Error while sending request!","Error");
+        toastr.error("Error while sending request!", "Error");
       }
     });
   });
 
   // DataTable
-  $(document).ready(function(){
+  $(document).ready(function() {
     srDT = $("#srTable").DataTable({
-      processing:true, serverSide:true, pageLength:25, responsive:true, searchDelay:500,
-      ajax:{ url:"<?= base_url() . 'sales-returns-list'; ?>", type:"POST" },
-      columns:[
-        { data:"ref_no", title:"Ref No" },
-        { data:"return_date", title:"Date" },
-        { data:"return_amount", title:"Amount" },
-        { data:"id", orderable:false, searchable:false, render: id => `
+      serverSide: true,
+      pageLength: 25,
+      responsive: true,
+      searchDelay: 500,
+      ajax: {
+        url: "<?= base_url() . 'sales-returns-list'; ?>",
+        type: "POST"
+      },
+      columns: [{
+          data: "ref_no",
+          title: "Ref No"
+        },
+        {
+          data: "return_date",
+          title: "Date"
+        },
+        {
+          data: "return_amount",
+          title: "Amount"
+        },
+        {
+          data: "id",
+          orderable: false,
+          searchable: false,
+          render: id => `
           <div class="btn-group btn-group-sm">
             <button class="btn btn-warning btn-edit-sr" data-id="${id}">Edit</button>
           </div>`
         }
       ],
-      order:[[1,"desc"]]
+      order: [
+        [1, "desc"]
+      ]
     });
   });
 
   // load edit modal
-  $(document).on('click', '.btn-edit-sr', function(){
-    const id=$(this).data('id');
+  $(document).on('click', '.btn-edit-sr', function() {
+    const id = $(this).data('id');
     $("#srEditError").addClass('d-none').empty();
     $("#sr-edit-items-wrapper").empty();
 
     $.ajax({
-      url:"<?= base_url() . 'sales-return/'; ?>"+id,
-      type:"GET",
-      beforeSend:function(){
+      url: "<?= base_url() . 'sales-return/'; ?>" + id,
+      type: "GET",
+      beforeSend: function() {
         $("#srEditSpinner").removeClass('d-none');
         $('#iboxSR .ibox-content').addClass('sk-loading');
       },
-      success:function(res){
+      success: function(res) {
         $("#srEditSpinner").addClass('d-none');
         $('#iboxSR .ibox-content').removeClass('sk-loading');
-        let obj={}; try{ obj=JSON.parse(res);}catch(e){}
-        if(obj.error){ toastr.error(obj.error.replace(/<[^>]*>?/gm,''),"Error"); return; }
+        let obj = {};
+        try {
+          obj = JSON.parse(res);
+        } catch (e) {}
+        if (obj.error) {
+          toastr.error(obj.error.replace(/<[^>]*>?/gm, ''), "Error");
+          return;
+        }
 
-        const r=obj.data;
+        const r = obj.data;
         $("#edit_sr_id").val(r.id);
         $("#edit_sr_ref_no").val(r.ref_no);
-        $("#edit_sr_date").val(r.return_date.replace(' ','T'));
+        $("#edit_sr_date").val(r.return_date.replace(' ', 'T'));
         $("#edit_sr_sale_id").val(r.sale_id);
         $("#edit_sr_customer_id").val(r.customer_id);
 
-        const items = Array.isArray(r.items)? r.items : [];
-        if(!items.length){
-          const tpl=document.getElementById('sr-edit-item-row-tpl').content.cloneNode(true);
+        const items = Array.isArray(r.items) ? r.items : [];
+        if (!items.length) {
+          const tpl = document.getElementById('sr-edit-item-row-tpl').content.cloneNode(true);
           $("#sr-edit-items-wrapper").append(tpl);
-        }else{
-          items.forEach(it=>{
-            const tpl=document.getElementById('sr-edit-item-row-tpl').content.cloneNode(true);
+        } else {
+          items.forEach(it => {
+            const tpl = document.getElementById('sr-edit-item-row-tpl').content.cloneNode(true);
             $(tpl).find('[name="product_id[]"]').val(it.product_id);
             $(tpl).find('[name="batch_no[]"]').val(it.batch_no);
             $(tpl).find('[name="qty[]"]').val(it.qty);
@@ -333,62 +386,79 @@
 
         $("#editSRModal").modal('show');
       },
-      error:function(){
+      error: function() {
         $("#srEditSpinner").addClass('d-none');
         $('#iboxSR .ibox-content').removeClass('sk-loading');
-        toastr.error("Failed to load sales return","Error");
+        toastr.error("Failed to load sales return", "Error");
       }
     });
   });
 
   // add/remove in edit modal
-  $("#srEditAddItem").on('click', function(){
-    const tpl=document.getElementById('sr-edit-item-row-tpl').content.cloneNode(true);
+  $("#srEditAddItem").on('click', function() {
+    const tpl = document.getElementById('sr-edit-item-row-tpl').content.cloneNode(true);
     $("#sr-edit-items-wrapper").append(tpl);
   });
-  $(document).on('click', '#sr-edit-items-wrapper .remove-item', function(){
+  $(document).on('click', '#sr-edit-items-wrapper .remove-item', function() {
     $(this).closest('.item-row').remove();
   });
 
   // submit edit
-  $("#srEditForm").on("submit", function(e){
+  $("#srEditForm").on("submit", function(e) {
     e.preventDefault();
-    const items=[];
-    $("#sr-edit-items-wrapper .item-row").each(function(){
-      const product_id=$(this).find('[name="product_id[]"]').val();
-      const batch_no=$(this).find('[name="batch_no[]"]').val();
-      const qty=$(this).find('[name="qty[]"]').val();
-      const price=$(this).find('[name="price[]"]').val();
-      if(product_id && batch_no && qty){
-        items.push({product_id:parseInt(product_id,10),batch_no,qty:parseInt(qty,10),price:parseFloat(price||0)});
+    const items = [];
+    $("#sr-edit-items-wrapper .item-row").each(function() {
+      const product_id = $(this).find('[name="product_id[]"]').val();
+      const batch_no = $(this).find('[name="batch_no[]"]').val();
+      const qty = $(this).find('[name="qty[]"]').val();
+      const price = $(this).find('[name="price[]"]').val();
+      if (product_id && batch_no && qty) {
+        items.push({
+          product_id: parseInt(product_id, 10),
+          batch_no,
+          qty: parseInt(qty, 10),
+          price: parseFloat(price || 0)
+        });
       }
     });
-    const fd=new FormData(this);
+    const fd = new FormData(this);
     fd.append('items', JSON.stringify(items));
 
     $.ajax({
-      url:"<?= base_url() . 'sales-return-update'; ?>",
-      type:"POST", data:fd, processData:false, contentType:false, cache:false,
-      beforeSend:function(){ $("#srEditSubmitBtn").prop("disabled",true); $("#srEditSpinner").removeClass('d-none'); },
-      success:function(res){
-        $("#srEditSpinner").addClass('d-none'); $("#srEditSubmitBtn").prop("disabled",false);
-        let obj={}; try{ obj=JSON.parse(res);}catch(e){}
-        if(obj.error){
-          $("#srEditError").html(obj.error).removeClass('d-none');
-          toastr.error("Please check errors list!","Error");
-          return;
-        }
-        if(obj.success){
-          toastr.success("Sales return updated","Success");
-          $("#editSRModal").modal('hide');
-          if (srDT) srDT.ajax.reload(null,false);
-          return;
-        }
-        toastr.error("Unexpected response","Error");
+      url: "<?= base_url() . 'sales-return-update'; ?>",
+      type: "POST",
+      data: fd,
+      processData: false,
+      contentType: false,
+      cache: false,
+      beforeSend: function() {
+        $("#srEditSubmitBtn").prop("disabled", true);
+        $("#srEditSpinner").removeClass('d-none');
       },
-      error:function(){
-        $("#srEditSpinner").addClass('d-none'); $("#srEditSubmitBtn").prop("disabled",false);
-        toastr.error("Error while sending request!","Error");
+      success: function(res) {
+        $("#srEditSpinner").addClass('d-none');
+        $("#srEditSubmitBtn").prop("disabled", false);
+        let obj = {};
+        try {
+          obj = JSON.parse(res);
+        } catch (e) {}
+        if (obj.error) {
+          $("#srEditError").html(obj.error).removeClass('d-none');
+          toastr.error("Please check errors list!", "Error");
+          return;
+        }
+        if (obj.success) {
+          toastr.success("Sales return updated", "Success");
+          $("#editSRModal").modal('hide');
+          if (srDT) srDT.ajax.reload(null, false);
+          return;
+        }
+        toastr.error("Unexpected response", "Error");
+      },
+      error: function() {
+        $("#srEditSpinner").addClass('d-none');
+        $("#srEditSubmitBtn").prop("disabled", false);
+        toastr.error("Error while sending request!", "Error");
       }
     });
   });

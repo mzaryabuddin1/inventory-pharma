@@ -89,6 +89,13 @@
                     </div>
                 </div>
                 <div class="ibox-content">
+                                        <div class="sk-spinner sk-spinner-wave">
+                        <div class="sk-rect1"></div>
+                        <div class="sk-rect2"></div>
+                        <div class="sk-rect3"></div>
+                        <div class="sk-rect4"></div>
+                        <div class="sk-rect5"></div>
+                    </div>
                     <div class="table-responsive">
                         <table class="table table-striped table-bordered table-hover" id="suppliersTable">
                             <thead>
@@ -103,7 +110,7 @@
                                     <th>Action</th>
                                 </tr>
                             </thead>
-                            <tbody></tbody>
+                            <tbody></tbody>x
                         </table>
                     </div>
                 </div>
@@ -184,7 +191,6 @@
 
     $(document).ready(function() {
         suppliersDT = $("#suppliersTable").DataTable({
-            processing: true,
             serverSide: true,
             pageLength: 25,
             responsive: true,

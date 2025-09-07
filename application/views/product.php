@@ -240,7 +240,6 @@
 
     $(document).ready(function() {
         productsDT = $("#productsTable").DataTable({
-            processing: true,
             serverSide: true,
             pageLength: 25,
             responsive: true,

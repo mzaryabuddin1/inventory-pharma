@@ -32,7 +32,7 @@
                                     <option value="1">Select purchase</option>
                                     <!-- TODO -->
                                     <?php foreach ($purchases as $purchase) : ?>
-                                        <option value="<?= $purchase['id'] ?>"><?= $purchase['ref_no'] ?></option>  
+                                        <option value="<?= $purchase['id'] ?>"><?= $purchase['ref_no'] ?></option>
                                     <?php endforeach; ?>
                                 </select>
                             </div>
@@ -42,7 +42,7 @@
                                     <option value="1">Select supplier</option>
                                     <!-- TODO -->
                                     <?php foreach ($suppliers as $supplier) : ?>
-                                        <option value="<?= $supplier['id'] ?>"><?= $supplier['name'] ?></option>  
+                                        <option value="<?= $supplier['id'] ?>"><?= $supplier['name'] ?></option>
                                     <?php endforeach; ?>
                                 </select>
                             </div>
@@ -57,9 +57,9 @@
                                     <div class="col-md-4">
                                         <select name="product_id[]" class="form-control" required>
                                             <option value="1">Select product</option>
-                                                <?php foreach ($products as $product) : ?>
-                                                    <option value="<?= $product['id'] ?>"><?= $product['product_name'] ?></option>  
-                                                <?php endforeach; ?>
+                                            <?php foreach ($products as $product) : ?>
+                                                <option value="<?= $product['id'] ?>"><?= $product['product_name'] ?></option>
+                                            <?php endforeach; ?>
                                         </select>
                                     </div>
                                     <div class="col-md-2"><input type="text" name="batch_no[]" class="form-control" placeholder="Batch No" required></div>
@@ -74,8 +74,8 @@
                                         <select name="product_id[]" class="form-control" required>
                                             <option value="">Select product</option>
                                             <?php foreach ($products as $product) : ?>
-                                                    <option value="<?= $product['id'] ?>"><?= $product['product_name'] ?></option>  
-                                                <?php endforeach; ?>
+                                                <option value="<?= $product['id'] ?>"><?= $product['product_name'] ?></option>
+                                            <?php endforeach; ?>
                                         </select>
                                     </div>
                                     <div class="col-md-2"><input type="text" name="batch_no[]" class="form-control" placeholder="Batch No" required></div>
@@ -115,6 +115,13 @@
                     <div class="ibox-tools"><a class="collapse-link"><i class="fa fa-chevron-up"></i></a></div>
                 </div>
                 <div class="ibox-content">
+                              <div class="sk-spinner sk-spinner-wave">
+            <div class="sk-rect1"></div>
+            <div class="sk-rect2"></div>
+            <div class="sk-rect3"></div>
+            <div class="sk-rect4"></div>
+            <div class="sk-rect5"></div>
+          </div>
                     <div class="table-responsive">
                         <table class="table table-striped table-bordered table-hover" id="prTable">
                             <thead>
@@ -159,7 +166,7 @@
                             <select name="purchase_id" id="edit_pr_purchase_id" class="form-control" required>
                                 <option value="" selected disable>Select purchase</option>
                                 <?php foreach ($purchases as $purchase) : ?>
-                                    <option value="<?= $purchase['id'] ?>"><?= $purchase['ref_no'] ?></option>  
+                                    <option value="<?= $purchase['id'] ?>"><?= $purchase['ref_no'] ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
@@ -167,9 +174,9 @@
                         <div class="col-sm-4">
                             <select name="supplier_id" id="edit_pr_supplier_id" class="form-control" required>
                                 <option value="">Select supplier</option>
-                                  <?php foreach ($suppliers as $supplier) : ?>
-                                        <option value="<?= $supplier['id'] ?>"><?= $supplier['name'] ?></option>  
-                                    <?php endforeach; ?>
+                                <?php foreach ($suppliers as $supplier) : ?>
+                                    <option value="<?= $supplier['id'] ?>"><?= $supplier['name'] ?></option>
+                                <?php endforeach; ?>
                             </select>
                         </div>
                     </div>
@@ -182,8 +189,8 @@
                                 <div class="col-md-4">
                                     <select name="product_id[]" class="form-control" required>
                                         <option value="">Select product</option>
-                                          <?php foreach ($products as $product) : ?>
-                                            <option value="<?= $product['id'] ?>"><?= $product['product_name'] ?></option>  
+                                        <?php foreach ($products as $product) : ?>
+                                            <option value="<?= $product['id'] ?>"><?= $product['product_name'] ?></option>
                                         <?php endforeach; ?>
                                     </select>
                                 </div>
@@ -367,7 +374,7 @@
                         $(tpl).find('[name="product_id[]"]').val(it.product_id);
                         $(tpl).find('[name="batch_no[]"]').val(it.batch_no);
                         $(tpl).find('[name="qty[]"]').val(it.qty);
-                        $(tpl).find('[name="price[]"]').val(it.price);//sss
+                        $(tpl).find('[name="price[]"]').val(it.price); //sss
                         $("#pr-edit-items-wrapper").append(tpl);
                     });
                 }

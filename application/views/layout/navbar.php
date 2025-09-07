@@ -11,7 +11,7 @@
                 href="#"
                 ><i class="fa fa-bars"></i>
               </a>
-              <form
+              <!-- <form
                 role="search"
                 class="navbar-form-custom"
                 action="search_results.html"
@@ -25,7 +25,7 @@
                     id="top-search"
                   />
                 </div>
-              </form>
+              </form> -->
             </div>
             <ul class="nav navbar-top-links navbar-right">
               <li>

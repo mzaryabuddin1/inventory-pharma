@@ -17,6 +17,13 @@
                 </div>
 
                 <div class="ibox-content">
+                    <div class="sk-spinner sk-spinner-wave">
+                        <div class="sk-rect1"></div>
+                        <div class="sk-rect2"></div>
+                        <div class="sk-rect3"></div>
+                        <div class="sk-rect4"></div>
+                        <div class="sk-rect5"></div>
+                    </div>
                     <!-- Filters -->
                     <form id="filters" class="mb-3">
                         <div class="row">
@@ -128,6 +135,9 @@
             ajax: {
                 url: "<?= base_url() . 'stock-report-data'; ?>",
                 type: "POST",
+                      beforeSend: function() {
+        $("#saleSpinner").removeClass("d-none");
+      },
                 data: function(d) {
                     // attach filters
                     return Object.assign(d, currentFilters());

@@ -75,6 +75,13 @@
           <div class="ibox-tools"><a class="collapse-link"><i class="fa fa-chevron-up"></i></a></div>
         </div>
         <div class="ibox-content">
+                              <div class="sk-spinner sk-spinner-wave">
+                        <div class="sk-rect1"></div>
+                        <div class="sk-rect2"></div>
+                        <div class="sk-rect3"></div>
+                        <div class="sk-rect4"></div>
+                        <div class="sk-rect5"></div>
+                    </div>
           <div class="table-responsive">
             <table class="table table-striped table-bordered table-hover" id="customersTable">
               <thead>

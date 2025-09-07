@@ -926,164 +926,179 @@ class App_model extends CI_Model
   }
 
   // ---- KPI sums ----
-public function sum_sales_total($uid, $date_from, $date_to) {
-  $this->db->select('COALESCE(SUM(total_amount),0) AS t')
-           ->from('sales')
-           ->where('created_by', (int)$uid)
-           ->where('DATE(sale_date) >=', $date_from)
-           ->where('DATE(sale_date) <=', $date_to);
-  return (float)$this->db->get()->row()->t;
-}
-
-public function sum_purchases_total($uid, $date_from, $date_to) {
-  $this->db->select('COALESCE(SUM(total_amount),0) AS t')
-           ->from('purchases')
-           ->where('created_by', (int)$uid)
-           ->where('DATE(purchase_date) >=', $date_from)
-           ->where('DATE(purchase_date) <=', $date_to);
-  return (float)$this->db->get()->row()->t;
-}
-
-// credit - debit for a party type
-public function ledger_balance_by_party_type($uid, $party_type) {
-  $this->db->select('COALESCE(SUM(credit - debit),0) AS bal')
-           ->from('ledger')
-           ->where('created_by', (int)$uid)
-           ->where('party_type', $party_type);
-  return (float)$this->db->get()->row()->bal;
-}
-
-// ---- Stock info ----
-public function stock_distinct_products_count($uid) {
-  $this->db->select('COUNT(DISTINCT product_id) AS c')
-           ->from('stock')
-           ->where('created_by', (int)$uid);
-  $row = $this->db->get()->row_array();
-  return (int)($row['c'] ?? 0);
-}
-
-public function stock_low_items_count($uid, $threshold = 10) {
-  $this->db->select('COUNT(*) AS c')
-           ->from('stock')
-           ->where('created_by', (int)$uid)
-           ->where('qty <=', (int)$threshold);
-  $row = $this->db->get()->row_array();
-  return (int)($row['c'] ?? 0);
-}
-
-// ---- Chart series ----
-public function series_sales_vs_purchases_last_12m($uid) {
-  // Build month labels (YYYY-MM) and sums
-  $labels = [];
-  $sales  = [];
-  $purch  = [];
-  for ($i = 11; $i >= 0; $i--) {
-    $ym   = date('Y-m', strtotime("-$i months"));
-    $from = $ym.'-01';
-    $to   = date('Y-m-t', strtotime($from));
-
-    $labels[] = $ym;
-    $sales[]  = $this->sum_sales_total($uid, $from, $to);
-    $purch[]  = $this->sum_purchases_total($uid, $from, $to);
+  public function sum_sales_total($uid, $date_from, $date_to)
+  {
+    $this->db->select('COALESCE(SUM(total_amount),0) AS t')
+      ->from('sales')
+      ->where('created_by', (int)$uid)
+      ->where('DATE(sale_date) >=', $date_from)
+      ->where('DATE(sale_date) <=', $date_to);
+    return (float)$this->db->get()->row()->t;
   }
-  return ['labels'=>$labels, 'sales'=>$sales, 'purchases'=>$purch];
-}
 
-public function series_payments_breakdown_6m($uid) {
-  $labels=[]; $customer=[]; $supplier=[];
-  for ($i=5; $i>=0; $i--) {
-    $ym = date('Y-m', strtotime("-$i months"));
-    $from = $ym.'-01';
-    $to   = date('Y-m-t', strtotime($from));
-
-    // customers (incoming = sum amount where type='customer')
-    $this->db->select('COALESCE(SUM(amount),0) AS t')
-             ->from('payments')
-             ->where('created_by', (int)$uid)
-             ->where('type','customer')
-             ->where('DATE(payment_date) >=', $from)
-             ->where('DATE(payment_date) <=', $to);
-    $cin = (float)$this->db->get()->row()->t;
-
-    // suppliers (outgoing)
-    $this->db->select('COALESCE(SUM(amount),0) AS t')
-             ->from('payments')
-             ->where('created_by', (int)$uid)
-             ->where('type','supplier')
-             ->where('DATE(payment_date) >=', $from)
-             ->where('DATE(payment_date) <=', $to);
-    $sout = (float)$this->db->get()->row()->t;
-
-    $labels[]   = $ym;
-    $customer[] = $cin;
-    $supplier[] = $sout;
+  public function sum_purchases_total($uid, $date_from, $date_to)
+  {
+    $this->db->select('COALESCE(SUM(total_amount),0) AS t')
+      ->from('purchases')
+      ->where('created_by', (int)$uid)
+      ->where('DATE(purchase_date) >=', $date_from)
+      ->where('DATE(purchase_date) <=', $date_to);
+    return (float)$this->db->get()->row()->t;
   }
-  return ['labels'=>$labels, 'customer'=>$customer, 'supplier'=>$supplier];
-}
 
-public function series_top_products_sales($uid, $limit=5) {
-  // Parse sales.items JSON and aggregate qty * price by product_id
-  // (Simple & portable approach)
-  $this->db->select('id, items')
-           ->from('sales')
-           ->where('created_by', (int)$uid)
-           ->order_by('id','DESC');
-  $rows = $this->db->get()->result_array();
+  // credit - debit for a party type
+  public function ledger_balance_by_party_type($uid, $party_type)
+  {
+    $this->db->select('COALESCE(SUM(credit - debit),0) AS bal')
+      ->from('ledger')
+      ->where('created_by', (int)$uid)
+      ->where('party_type', $party_type);
+    return (float)$this->db->get()->row()->bal;
+  }
 
-  $agg = []; // product_id => amount
-  foreach ($rows as $r) {
-    $items = json_decode($r['items'], true);
-    if (!is_array($items)) continue;
-    foreach ($items as $it) {
-      $pid = (int)($it['product_id'] ?? 0);
-      $qty = (int)($it['qty'] ?? 0);
-      $prc = (float)($it['price'] ?? 0);
-      if ($pid<=0) continue;
-      $agg[$pid] = ($agg[$pid] ?? 0) + ($qty * $prc);
+  // ---- Stock info ----
+  public function stock_distinct_products_count($uid)
+  {
+    $this->db->select('COUNT(DISTINCT product_id) AS c')
+      ->from('stock')
+      ->where('created_by', (int)$uid);
+    $row = $this->db->get()->row_array();
+    return (int)($row['c'] ?? 0);
+  }
+
+  public function stock_low_items_count($uid, $threshold = 10)
+  {
+    $this->db->select('COUNT(*) AS c')
+      ->from('stock')
+      ->where('created_by', (int)$uid)
+      ->where('qty <=', (int)$threshold);
+    $row = $this->db->get()->row_array();
+    return (int)($row['c'] ?? 0);
+  }
+
+  // ---- Chart series ----
+  public function series_sales_vs_purchases_last_12m($uid)
+  {
+    // Build month labels (YYYY-MM) and sums
+    $labels = [];
+    $sales  = [];
+    $purch  = [];
+    for ($i = 11; $i >= 0; $i--) {
+      $ym   = date('Y-m', strtotime("-$i months"));
+      $from = $ym . '-01';
+      $to   = date('Y-m-t', strtotime($from));
+
+      $labels[] = $ym;
+      $sales[]  = $this->sum_sales_total($uid, $from, $to);
+      $purch[]  = $this->sum_purchases_total($uid, $from, $to);
     }
+    return ['labels' => $labels, 'sales' => $sales, 'purchases' => $purch];
   }
 
-  arsort($agg); // high to low
-  $top = array_slice($agg, 0, $limit, true);
+  public function series_payments_breakdown_6m($uid)
+  {
+    $labels = [];
+    $customer = [];
+    $supplier = [];
+    for ($i = 5; $i >= 0; $i--) {
+      $ym = date('Y-m', strtotime("-$i months"));
+      $from = $ym . '-01';
+      $to   = date('Y-m-t', strtotime($from));
 
-  // resolve product names
-  $labels = []; $values=[];
-  if ($top) {
-    $ids = array_keys($top);
-    $prows = $this->db->select('id, product_name')->from('products')
-                      ->where_in('id', $ids)->get()->result_array();
-    $nameById = [];
-    foreach ($prows as $p) $nameById[(int)$p['id']] = $p['product_name'];
+      // customers (incoming = sum amount where type='customer')
+      $this->db->select('COALESCE(SUM(amount),0) AS t')
+        ->from('payments')
+        ->where('created_by', (int)$uid)
+        ->where('type', 'customer')
+        ->where('DATE(payment_date) >=', $from)
+        ->where('DATE(payment_date) <=', $to);
+      $cin = (float)$this->db->get()->row()->t;
 
-    foreach ($top as $pid=>$amt) {
-      $labels[] = $nameById[$pid] ?? ('#'.$pid);
-      $values[] = (float)$amt;
+      // suppliers (outgoing)
+      $this->db->select('COALESCE(SUM(amount),0) AS t')
+        ->from('payments')
+        ->where('created_by', (int)$uid)
+        ->where('type', 'supplier')
+        ->where('DATE(payment_date) >=', $from)
+        ->where('DATE(payment_date) <=', $to);
+      $sout = (float)$this->db->get()->row()->t;
+
+      $labels[]   = $ym;
+      $customer[] = $cin;
+      $supplier[] = $sout;
     }
+    return ['labels' => $labels, 'customer' => $customer, 'supplier' => $supplier];
   }
-  return ['labels'=>$labels, 'values'=>$values];
-}
 
-// ---- Latest activity ----
-public function latest_purchases($uid, $limit=5) {
-  return $this->db->select('ref_no, purchase_date, total_amount')
-                  ->from('purchases')
-                  ->where('created_by', (int)$uid)
-                  ->order_by('id','DESC')
-                  ->limit($limit)->get()->result_array();
-}
-public function latest_sales($uid, $limit=5) {
-  return $this->db->select('invoice_no, sale_date, total_amount, customer_id')
-                  ->from('sales')
-                  ->where('created_by', (int)$uid)
-                  ->order_by('id','DESC')
-                  ->limit($limit)->get()->result_array();
-}
-public function latest_payments($uid, $limit=5) {
-  return $this->db->select('ref_no, payment_date, type, amount, mode')
-                  ->from('payments')
-                  ->where('created_by', (int)$uid)
-                  ->order_by('id','DESC')
-                  ->limit($limit)->get()->result_array();
-}
+  public function series_top_products_sales($uid, $limit = 5)
+  {
+    // Parse sales.items JSON and aggregate qty * price by product_id
+    // (Simple & portable approach)
+    $this->db->select('id, items')
+      ->from('sales')
+      ->where('created_by', (int)$uid)
+      ->order_by('id', 'DESC');
+    $rows = $this->db->get()->result_array();
 
+    $agg = []; // product_id => amount
+    foreach ($rows as $r) {
+      $items = json_decode($r['items'], true);
+      if (!is_array($items)) continue;
+      foreach ($items as $it) {
+        $pid = (int)($it['product_id'] ?? 0);
+        $qty = (int)($it['qty'] ?? 0);
+        $prc = (float)($it['price'] ?? 0);
+        if ($pid <= 0) continue;
+        $agg[$pid] = ($agg[$pid] ?? 0) + ($qty * $prc);
+      }
+    }
+
+    arsort($agg); // high to low
+    $top = array_slice($agg, 0, $limit, true);
+
+    // resolve product names
+    $labels = [];
+    $values = [];
+    if ($top) {
+      $ids = array_keys($top);
+      $prows = $this->db->select('id, product_name')->from('products')
+        ->where_in('id', $ids)->get()->result_array();
+      $nameById = [];
+      foreach ($prows as $p) $nameById[(int)$p['id']] = $p['product_name'];
+
+      foreach ($top as $pid => $amt) {
+        $labels[] = $nameById[$pid] ?? ('#' . $pid);
+        $values[] = (float)$amt;
+      }
+    }
+    return ['labels' => $labels, 'values' => $values];
+  }
+
+  // ---- Latest activity ----
+  public function latest_purchases($uid, $limit = 5)
+  {
+    return $this->db->select('ref_no, purchase_date, total_amount')
+      ->from('purchases')
+      ->where('created_by', (int)$uid)
+      ->order_by('id', 'DESC')
+      ->limit($limit)->get()->result_array();
+  }
+  public function latest_sales($uid, $limit = 5)
+  {
+    return $this->db->select('invoice_no, sale_date, total_amount, customer_id')
+      ->from('sales')
+      ->where('created_by', (int)$uid)
+      ->order_by('id', 'DESC')
+      ->limit($limit)->get()->result_array();
+  }
+  public function latest_payments($uid, $limit = 5)
+  {
+    return $this->db->select('ref_no, payment_date, type, amount, mode')
+      ->from('payments')
+      ->where('created_by', (int)$uid)
+      ->order_by('id', 'DESC')
+      ->limit($limit)->get()->result_array();
+  }
+
+  
 }

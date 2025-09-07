@@ -77,7 +77,11 @@
             </div>
 
             <div class="sk-spinner sk-spinner-wave d-none" id="paySpinner">
-              <div class="sk-rect1"></div><div class="sk-rect2"></div><div class="sk-rect3"></div><div class="sk-rect4"></div><div class="sk-rect5"></div>
+              <div class="sk-rect1"></div>
+              <div class="sk-rect2"></div>
+              <div class="sk-rect3"></div>
+              <div class="sk-rect4"></div>
+              <div class="sk-rect5"></div>
             </div>
 
             <div class="form-group row">
@@ -101,6 +105,13 @@
           <div class="ibox-tools"><a class="collapse-link"><i class="fa fa-chevron-up"></i></a></div>
         </div>
         <div class="ibox-content">
+          <div class="sk-spinner sk-spinner-wave d-none" id="srEditSpinner">
+            <div class="sk-rect1"></div>
+            <div class="sk-rect2"></div>
+            <div class="sk-rect3"></div>
+            <div class="sk-rect4"></div>
+            <div class="sk-rect5"></div>
+          </div>
           <div class="table-responsive">
             <table class="table table-striped table-bordered table-hover" id="paymentsTable">
               <thead>
@@ -197,7 +208,11 @@
         </div>
         <div class="modal-footer">
           <div class="sk-spinner sk-spinner-wave d-none" id="payEditSpinner">
-            <div class="sk-rect1"></div><div class="sk-rect2"></div><div class="sk-rect3"></div><div class="sk-rect4"></div><div class="sk-rect5"></div>
+            <div class="sk-rect1"></div>
+            <div class="sk-rect2"></div>
+            <div class="sk-rect3"></div>
+            <div class="sk-rect4"></div>
+            <div class="sk-rect5"></div>
           </div>
           <button type="button" class="btn btn-white" data-dismiss="modal">Close</button>
           <button type="submit" class="btn btn-primary" id="payEditSubmitBtn">Update</button>
@@ -216,10 +231,15 @@
 
   // Toggle cheque fields
   function toggleCheque(mode, $wrap) {
-    if (mode === 'cheque') $wrap.removeClass('d-none'); else $wrap.addClass('d-none');
+    if (mode === 'cheque') $wrap.removeClass('d-none');
+    else $wrap.addClass('d-none');
   }
-  $("#mode").on('change', function(){ toggleCheque(this.value, $("#chequeFields")); });
-  $("#edit_mode").on('change', function(){ toggleCheque(this.value, $("#editChequeFields")); });
+  $("#mode").on('change', function() {
+    toggleCheque(this.value, $("#chequeFields"));
+  });
+  $("#edit_mode").on('change', function() {
+    toggleCheque(this.value, $("#editChequeFields"));
+  });
 
   // TODO: optionally load parties based on type via AJAX
   // Example stub:
@@ -227,7 +247,7 @@
   // $("#edit_type").on('change', function(){ loadParties(this.value, $("#edit_party_id")); });
 
   // Add submit
-  $("#payAddForm").on("submit", function(e){
+  $("#payAddForm").on("submit", function(e) {
     e.preventDefault();
     const fd = new FormData(this);
 
@@ -238,77 +258,122 @@
       processData: false,
       contentType: false,
       cache: false,
-      beforeSend: function(){
+      beforeSend: function() {
         $("#paySpinner").removeClass("d-none");
         $("#payError").addClass("d-none").empty();
         $("#payAddForm :submit").prop("disabled", true).addClass("d-none");
       },
-      success: function(res){
+      success: function(res) {
         $("#paySpinner").addClass("d-none");
         $("#payAddForm :submit").prop("disabled", false).removeClass("d-none");
-        let obj={}; try{ obj=JSON.parse(res);}catch(e){}
-        if(obj.error){
+        let obj = {};
+        try {
+          obj = JSON.parse(res);
+        } catch (e) {}
+        if (obj.error) {
           $("#payError").html(obj.error).removeClass("d-none");
-          toastr.error("Please check errors list!","Error");
+          toastr.error("Please check errors list!", "Error");
           return;
         }
-        if(obj.success){
-          toastr.success("Payment saved","Success");
+        if (obj.success) {
+          toastr.success("Payment saved", "Success");
           $("#payResetBtn").trigger("click");
-          if (paymentsDT) paymentsDT.ajax.reload(null,false);
+          if (paymentsDT) paymentsDT.ajax.reload(null, false);
           return;
         }
-        toastr.error("Unexpected response","Error");
+        toastr.error("Unexpected response", "Error");
       },
-      error: function(){
+      error: function() {
         $("#paySpinner").addClass("d-none");
         $("#payAddForm :submit").prop("disabled", false).removeClass("d-none");
-        toastr.error("Error while sending request!","Error");
+        toastr.error("Error while sending request!", "Error");
       }
     });
   });
 
   // DataTable
-  $(document).ready(function(){
+  $(document).ready(function() {
     paymentsDT = $("#paymentsTable").DataTable({
-      processing:true, serverSide:true, pageLength:25, responsive:true, searchDelay:500,
-      ajax:{ url:"<?= base_url() . 'payments-list'; ?>", type:"POST" },
-      columns:[
-        { data:"ref_no", title:"Ref No" },
-        { data:"payment_date", title:"Date" },
-        { data:"type", title:"Type",
-          render: t => t==='customer' ? 'Customer (Receive)' : 'Supplier (Pay)' },
-        { data:"party_label", title:"Party", defaultContent: "" },
-        { data:"mode", title:"Mode", render: m => m ? m.toUpperCase() : "" },
-        { data:"amount", title:"Amount" },
-        { data:"id", orderable:false, searchable:false, render: id => `
+      processing: true,
+      serverSide: true,
+      pageLength: 25,
+      responsive: true,
+      searchDelay: 500,
+      ajax: {
+        url: "<?= base_url() . 'payments-list'; ?>",
+        type: "POST"
+      },
+      columns: [{
+          data: "ref_no",
+          title: "Ref No"
+        },
+        {
+          data: "payment_date",
+          title: "Date"
+        },
+        {
+          data: "type",
+          title: "Type",
+          render: t => t === 'customer' ? 'Customer (Receive)' : 'Supplier (Pay)'
+        },
+        {
+          data: "party_label",
+          title: "Party",
+          defaultContent: ""
+        },
+        {
+          data: "mode",
+          title: "Mode",
+          render: m => m ? m.toUpperCase() : ""
+        },
+        {
+          data: "amount",
+          title: "Amount"
+        },
+        {
+          data: "id",
+          orderable: false,
+          searchable: false,
+          render: id => `
           <div class="btn-group btn-group-sm">
             <button class="btn btn-warning btn-edit-pay" data-id="${id}">Edit</button>
           </div>`
         }
       ],
-      order:[[1,"desc"]]
+      order: [
+        [1, "desc"]
+      ]
     });
   });
 
   // Open edit modal
-  $(document).on('click', '.btn-edit-pay', function(){
-    const id=$(this).data('id');
+  $(document).on('click', '.btn-edit-pay', function() {
+    const id = $(this).data('id');
     $("#payEditError").addClass('d-none').empty();
 
     $.ajax({
-      url:"<?= base_url() . 'payment/'; ?>"+id,
-      type:"GET",
-      beforeSend:function(){ $("#payEditSpinner").removeClass('d-none'); $('#iboxPay .ibox-content').addClass('sk-loading'); },
-      success:function(res){
-        $("#payEditSpinner").addClass('d-none'); $('#iboxPay .ibox-content').removeClass('sk-loading');
-        let obj={}; try{ obj=JSON.parse(res);}catch(e){}
-        if(obj.error){ toastr.error(obj.error.replace(/<[^>]*>?/gm,''),"Error"); return; }
-        const r=obj.data;
+      url: "<?= base_url() . 'payment/'; ?>" + id,
+      type: "GET",
+      beforeSend: function() {
+        $("#payEditSpinner").removeClass('d-none');
+        $('#iboxPay .ibox-content').addClass('sk-loading');
+      },
+      success: function(res) {
+        $("#payEditSpinner").addClass('d-none');
+        $('#iboxPay .ibox-content').removeClass('sk-loading');
+        let obj = {};
+        try {
+          obj = JSON.parse(res);
+        } catch (e) {}
+        if (obj.error) {
+          toastr.error(obj.error.replace(/<[^>]*>?/gm, ''), "Error");
+          return;
+        }
+        const r = obj.data;
 
         $("#edit_payment_id").val(r.id);
         $("#edit_ref_no").val(r.ref_no);
-        $("#edit_payment_date").val(r.payment_date.replace(' ','T'));
+        $("#edit_payment_date").val(r.payment_date.replace(' ', 'T'));
         $("#edit_type").val(r.type);
         // TODO: load parties based on r.type then set:
         // $("#edit_party_id").val(r.party_id);
@@ -320,41 +385,54 @@
 
         $("#editPaymentModal").modal('show');
       },
-      error:function(){
-        $("#payEditSpinner").addClass('d-none'); $('#iboxPay .ibox-content').removeClass('sk-loading');
-        toastr.error("Failed to load payment","Error");
+      error: function() {
+        $("#payEditSpinner").addClass('d-none');
+        $('#iboxPay .ibox-content').removeClass('sk-loading');
+        toastr.error("Failed to load payment", "Error");
       }
     });
   });
 
   // Submit edit
-  $("#payEditForm").on("submit", function(e){
+  $("#payEditForm").on("submit", function(e) {
     e.preventDefault();
     const fd = new FormData(this);
 
     $.ajax({
-      url:"<?= base_url() . 'payment-update'; ?>",
-      type:"POST", data:fd, processData:false, contentType:false, cache:false,
-      beforeSend:function(){ $("#payEditSubmitBtn").prop("disabled",true); $("#payEditSpinner").removeClass('d-none'); },
-      success:function(res){
-        $("#payEditSpinner").addClass('d-none'); $("#payEditSubmitBtn").prop("disabled",false);
-        let obj={}; try{ obj=JSON.parse(res);}catch(e){}
-        if(obj.error){
-          $("#payEditError").html(obj.error).removeClass('d-none');
-          toastr.error("Please check errors list!","Error");
-          return;
-        }
-        if(obj.success){
-          toastr.success("Payment updated","Success");
-          $("#editPaymentModal").modal('hide');
-          if (paymentsDT) paymentsDT.ajax.reload(null,false);
-          return;
-        }
-        toastr.error("Unexpected response","Error");
+      url: "<?= base_url() . 'payment-update'; ?>",
+      type: "POST",
+      data: fd,
+      processData: false,
+      contentType: false,
+      cache: false,
+      beforeSend: function() {
+        $("#payEditSubmitBtn").prop("disabled", true);
+        $("#payEditSpinner").removeClass('d-none');
       },
-      error:function(){
-        $("#payEditSpinner").addClass('d-none'); $("#payEditSubmitBtn").prop("disabled",false);
-        toastr.error("Error while sending request!","Error");
+      success: function(res) {
+        $("#payEditSpinner").addClass('d-none');
+        $("#payEditSubmitBtn").prop("disabled", false);
+        let obj = {};
+        try {
+          obj = JSON.parse(res);
+        } catch (e) {}
+        if (obj.error) {
+          $("#payEditError").html(obj.error).removeClass('d-none');
+          toastr.error("Please check errors list!", "Error");
+          return;
+        }
+        if (obj.success) {
+          toastr.success("Payment updated", "Success");
+          $("#editPaymentModal").modal('hide');
+          if (paymentsDT) paymentsDT.ajax.reload(null, false);
+          return;
+        }
+        toastr.error("Unexpected response", "Error");
+      },
+      error: function() {
+        $("#payEditSpinner").addClass('d-none');
+        $("#payEditSubmitBtn").prop("disabled", false);
+        toastr.error("Error while sending request!", "Error");
       }
     });
   });

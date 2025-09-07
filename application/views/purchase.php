@@ -32,9 +32,9 @@
                 <select name="supplier_id" class="form-control" required>
                   <option value="1">Select supplier</option>
                   <!-- TODO: populate with your suppliers -->
-                    <?php foreach ($suppliers as $supplier) : ?>
-                      <option value="<?= $supplier['id'] ?>"><?= $supplier['name'] ?></option>  
-                    <?php endforeach; ?>
+                  <?php foreach ($suppliers as $supplier) : ?>
+                    <option value="<?= $supplier['id'] ?>"><?= $supplier['name'] ?></option>
+                  <?php endforeach; ?>
                 </select>
               </div>
             </div>
@@ -50,9 +50,9 @@
                     <select name="product_id[]" class="form-control" required>
                       <option value="1">Select product</option>
                       <!-- TODO: populate products -->
-                        <?php foreach ($products as $product) : ?>
-                          <option value="<?= $product['id'] ?>"><?= $product['product_name'] ?></option>  
-                        <?php endforeach; ?>
+                      <?php foreach ($products as $product) : ?>
+                        <option value="<?= $product['id'] ?>"><?= $product['product_name'] ?></option>
+                      <?php endforeach; ?>
                     </select>
                   </div>
                   <div class="col-md-2"><input type="text" name="batch_no[]" class="form-control" placeholder="Batch No" required></div>
@@ -67,9 +67,9 @@
                     <select name="product_id[]" class="form-control" required>
                       <option value="1">Select product</option>
                       <!-- TODO: populate products -->
-                        <?php foreach ($products as $product) : ?>
-                          <option value="<?= $product['id'] ?>"><?= $product['product_name'] ?></option>  
-                        <?php endforeach; ?>
+                      <?php foreach ($products as $product) : ?>
+                        <option value="<?= $product['id'] ?>"><?= $product['product_name'] ?></option>
+                      <?php endforeach; ?>
                     </select>
                   </div>
                   <div class="col-md-2"><input type="text" name="batch_no[]" class="form-control" placeholder="Batch No" required></div>
@@ -81,7 +81,11 @@
             </div>
 
             <div class="sk-spinner sk-spinner-wave d-none" id="purSpinner">
-              <div class="sk-rect1"></div><div class="sk-rect2"></div><div class="sk-rect3"></div><div class="sk-rect4"></div><div class="sk-rect5"></div>
+              <div class="sk-rect1"></div>
+              <div class="sk-rect2"></div>
+              <div class="sk-rect3"></div>
+              <div class="sk-rect4"></div>
+              <div class="sk-rect5"></div>
             </div>
 
             <div class="form-group row">
@@ -105,6 +109,13 @@
           <div class="ibox-tools"><a class="collapse-link"><i class="fa fa-chevron-up"></i></a></div>
         </div>
         <div class="ibox-content">
+          <div class="sk-spinner sk-spinner-wave">
+            <div class="sk-rect1"></div>
+            <div class="sk-rect2"></div>
+            <div class="sk-rect3"></div>
+            <div class="sk-rect4"></div>
+            <div class="sk-rect5"></div>
+          </div>
           <div class="table-responsive">
             <table class="table table-striped table-bordered table-hover" id="purchasesTable">
               <thead>
@@ -148,10 +159,10 @@
             <label class="col-sm-2 col-form-label">Supplier</label>
             <div class="col-sm-10">
               <select name="supplier_id" id="edit_supplier_id" class="form-control" required>
-                <option >Select supplier</option>  
-                  <?php foreach ($suppliers as $supplier) : ?>
-                    <option value="<?= $supplier['id'] ?>"><?= $supplier['name'] ?></option>  
-                  <?php endforeach; ?>  
+                <option>Select supplier</option>
+                <?php foreach ($suppliers as $supplier) : ?>
+                  <option value="<?= $supplier['id'] ?>"><?= $supplier['name'] ?></option>
+                <?php endforeach; ?>
                 <!-- TODO: populate -->
               </select>
             </div>
@@ -165,10 +176,10 @@
               <div class="row item-row align-items-center mb-2">
                 <div class="col-md-4">
                   <select name="product_id[]" class="form-control" required>
-                    <option >Select product</option>
-                      <?php foreach ($products as $product) : ?>
-                        <option value="<?= $product['id'] ?>"><?= $product['product_name'] ?></option>  
-                      <?php endforeach; ?>
+                    <option>Select product</option>
+                    <?php foreach ($products as $product) : ?>
+                      <option value="<?= $product['id'] ?>"><?= $product['product_name'] ?></option>
+                    <?php endforeach; ?>
                   </select>
                 </div>
                 <div class="col-md-2"><input type="text" name="batch_no[]" class="form-control" placeholder="Batch No" required></div>
@@ -182,7 +193,11 @@
         </div>
         <div class="modal-footer">
           <div class="sk-spinner sk-spinner-wave d-none" id="purEditSpinner">
-            <div class="sk-rect1"></div><div class="sk-rect2"></div><div class="sk-rect3"></div><div class="sk-rect4"></div><div class="sk-rect5"></div>
+            <div class="sk-rect1"></div>
+            <div class="sk-rect2"></div>
+            <div class="sk-rect3"></div>
+            <div class="sk-rect4"></div>
+            <div class="sk-rect5"></div>
           </div>
           <button type="button" class="btn btn-white" data-dismiss="modal">Close</button>
           <button type="submit" class="btn btn-primary" id="purEditSubmitBtn">Update</button>
@@ -200,25 +215,30 @@
   var purchasesDT;
 
   // Add row in Add form
-  $(document).on('click', '.add-item', function(){
+  $(document).on('click', '.add-item', function() {
     const tpl = document.getElementById('pur-item-row-tpl').content.cloneNode(true);
     $('#pur-items-wrapper').append(tpl);
   });
-  $(document).on('click', '#pur-items-wrapper .remove-item', function(){
+  $(document).on('click', '#pur-items-wrapper .remove-item', function() {
     $(this).closest('.item-row').remove();
   });
 
   // Submit Add form
-  $("#purchaseAddForm").on("submit", function(e){
+  $("#purchaseAddForm").on("submit", function(e) {
     e.preventDefault();
     const items = [];
-    $("#pur-items-wrapper .item-row").each(function(){
+    $("#pur-items-wrapper .item-row").each(function() {
       const product_id = $(this).find('[name="product_id[]"]').val();
-      const batch_no   = $(this).find('[name="batch_no[]"]').val();
-      const qty        = $(this).find('[name="qty[]"]').val();
-      const price      = $(this).find('[name="price[]"]').val();
+      const batch_no = $(this).find('[name="batch_no[]"]').val();
+      const qty = $(this).find('[name="qty[]"]').val();
+      const price = $(this).find('[name="price[]"]').val();
       if (product_id && batch_no && qty) {
-        items.push({ product_id: parseInt(product_id,10), batch_no, qty: parseInt(qty,10), price: parseFloat(price||0) });
+        items.push({
+          product_id: parseInt(product_id, 10),
+          batch_no,
+          qty: parseInt(qty, 10),
+          price: parseFloat(price || 0)
+        });
       }
     });
 
@@ -232,82 +252,115 @@
       processData: false,
       contentType: false,
       cache: false,
-      beforeSend: function(){
+      beforeSend: function() {
         $("#purSpinner").removeClass("d-none");
         $("#purError").addClass("d-none").empty();
         $("#purchaseAddForm :submit").prop("disabled", true).addClass("d-none");
       },
-      success: function(res){
+      success: function(res) {
         $("#purSpinner").addClass("d-none");
         $("#purchaseAddForm :submit").prop("disabled", false).removeClass("d-none");
-        let obj = {}; try{ obj=JSON.parse(res);}catch(e){}
-        if(obj.error){
+        let obj = {};
+        try {
+          obj = JSON.parse(res);
+        } catch (e) {}
+        if (obj.error) {
           $("#purError").html(obj.error).removeClass("d-none");
-          toastr.error("Please check errors list!","Error");
+          toastr.error("Please check errors list!", "Error");
           return;
         }
-        if(obj.success){
-          toastr.success("Purchase saved","Success");
+        if (obj.success) {
+          toastr.success("Purchase saved", "Success");
           $("#purResetBtn").trigger("click");
-          if (purchasesDT) purchasesDT.ajax.reload(null,false);
+          if (purchasesDT) purchasesDT.ajax.reload(null, false);
           return;
         }
-        toastr.error("Unexpected response","Error");
+        toastr.error("Unexpected response", "Error");
       },
-      error: function(){
+      error: function() {
         $("#purSpinner").addClass("d-none");
         $("#purchaseAddForm :submit").prop("disabled", false).removeClass("d-none");
-        toastr.error("Error while sending request!","Error");
+        toastr.error("Error while sending request!", "Error");
       }
     });
   });
 
   // DataTable
-  $(document).ready(function(){
+  $(document).ready(function() {
     purchasesDT = $("#purchasesTable").DataTable({
-      processing:true, serverSide:true, pageLength:25, responsive:true, searchDelay:500,
-      ajax:{ url:"<?= base_url() . 'purchases-list'; ?>", type:"POST" },
-      columns:[
-        { data:"ref_no", title:"Ref No" },
-        { data:"purchase_date", title:"Date" },
-        { data:"total_amount", title:"Total" },
-        { data:"id", orderable:false, searchable:false, render: id => `
+      serverSide: true,
+      pageLength: 25,
+      responsive: true,
+      searchDelay: 500,
+      ajax: {
+        url: "<?= base_url() . 'purchases-list'; ?>",
+        type: "POST"
+      },
+      columns: [{
+          data: "ref_no",
+          title: "Ref No"
+        },
+        {
+          data: "purchase_date",
+          title: "Date"
+        },
+        {
+          data: "total_amount",
+          title: "Total"
+        },
+        {
+          data: "id",
+          orderable: false,
+          searchable: false,
+          render: id => `
           <div class="btn-group btn-group-sm">
             <button class="btn btn-warning btn-edit-pur" data-id="${id}">Edit</button>
           </div>`
         }
       ],
-      order:[[1,"desc"]]
+      order: [
+        [1, "desc"]
+      ]
     });
   });
 
   // Load record into edit modal
-  $(document).on('click', '.btn-edit-pur', function(){
+  $(document).on('click', '.btn-edit-pur', function() {
     const id = $(this).data('id');
     $("#purEditError").addClass('d-none').empty();
     $("#pur-edit-items-wrapper").empty();
 
     $.ajax({
-      url: "<?= base_url() . 'purchase/'; ?>"+id,
-      type:"GET",
-      beforeSend: function(){ $("#purEditSpinner").removeClass('d-none'); $('#iboxPur .ibox-content').addClass('sk-loading'); },
-      success: function(res){
-        $("#purEditSpinner").addClass('d-none'); $('#iboxPur .ibox-content').removeClass('sk-loading');
-        let obj={}; try{ obj=JSON.parse(res);}catch(e){}
-        if(obj.error){ toastr.error(obj.error.replace(/<[^>]*>?/gm,''),"Error"); return; }
-        const r=obj.data;
+      url: "<?= base_url() . 'purchase/'; ?>" + id,
+      type: "GET",
+      beforeSend: function() {
+        $("#purEditSpinner").removeClass('d-none');
+        $('#iboxPur .ibox-content').addClass('sk-loading');
+      },
+      success: function(res) {
+        $("#purEditSpinner").addClass('d-none');
+        $('#iboxPur .ibox-content').removeClass('sk-loading');
+        let obj = {};
+        try {
+          obj = JSON.parse(res);
+        } catch (e) {}
+        if (obj.error) {
+          toastr.error(obj.error.replace(/<[^>]*>?/gm, ''), "Error");
+          return;
+        }
+        const r = obj.data;
 
         $("#edit_purchase_id").val(r.id);
         $("#edit_ref_no").val(r.ref_no);
-        $("#edit_purchase_date").val(r.purchase_date.replace(' ','T')); // quick map for datetime-local
+        $("#edit_purchase_date").val(r.purchase_date.replace(' ', 'T')); // quick map for datetime-local
         $("#edit_supplier_id").val(r.supplier_id);
 
-        const items = Array.isArray(r.items)? r.items : [];
-        if(!items.length){
+        const items = Array.isArray(r.items) ? r.items : [];
+        if (!items.length) {
           const tpl = document.getElementById('pur-edit-item-row-tpl').content.cloneNode(true);
           $("#pur-edit-items-wrapper").append(tpl);
-        }else{
-          items.forEach(it=>{
+        } else {
+          items.forEach(it => {
             const tpl = document.getElementById('pur-edit-item-row-tpl').content.cloneNode(true);
             $(tpl).find('[name="product_id[]"]').val(it.product_id);
             $(tpl).find('[name="batch_no[]"]').val(it.batch_no);
@@ -319,51 +372,80 @@
 
         $("#editPurchaseModal").modal('show');
       },
-      error: function(){
-        $("#purEditSpinner").addClass('d-none'); $('#iboxPur .ibox-content').removeClass('sk-loading');
-        toastr.error("Failed to load purchase","Error");
+      error: function() {
+        $("#purEditSpinner").addClass('d-none');
+        $('#iboxPur .ibox-content').removeClass('sk-loading');
+        toastr.error("Failed to load purchase", "Error");
       }
     });
   });
 
   // Add row in edit modal
-  $("#purEditAddItem").on('click', function(){
+  $("#purEditAddItem").on('click', function() {
     const tpl = document.getElementById('pur-edit-item-row-tpl').content.cloneNode(true);
     $("#pur-edit-items-wrapper").append(tpl);
   });
-  $(document).on('click', '#pur-edit-items-wrapper .remove-item', function(){
+  $(document).on('click', '#pur-edit-items-wrapper .remove-item', function() {
     $(this).closest('.item-row').remove();
   });
 
   // submit edit
-  $("#purchaseEditForm").on("submit", function(e){
+  $("#purchaseEditForm").on("submit", function(e) {
     e.preventDefault();
-    const items=[];
-    $("#pur-edit-items-wrapper .item-row").each(function(){
+    const items = [];
+    $("#pur-edit-items-wrapper .item-row").each(function() {
       const product_id = $(this).find('[name="product_id[]"]').val();
-      const batch_no   = $(this).find('[name="batch_no[]"]').val();
-      const qty        = $(this).find('[name="qty[]"]').val();
-      const price      = $(this).find('[name="price[]"]').val();
-      if(product_id && batch_no && qty){
-        items.push({ product_id:parseInt(product_id,10), batch_no, qty:parseInt(qty,10), price:parseFloat(price||0) });
+      const batch_no = $(this).find('[name="batch_no[]"]').val();
+      const qty = $(this).find('[name="qty[]"]').val();
+      const price = $(this).find('[name="price[]"]').val();
+      if (product_id && batch_no && qty) {
+        items.push({
+          product_id: parseInt(product_id, 10),
+          batch_no,
+          qty: parseInt(qty, 10),
+          price: parseFloat(price || 0)
+        });
       }
     });
     const fd = new FormData(this);
     fd.append('items', JSON.stringify(items));
 
     $.ajax({
-      url:"<?= base_url() . 'purchase-update'; ?>",
-      type:"POST",
-      data: fd, processData:false, contentType:false, cache:false,
-      beforeSend:function(){ $("#purEditSubmitBtn").prop("disabled",true); $("#purEditSpinner").removeClass('d-none'); },
-      success:function(res){
-        $("#purEditSpinner").addClass('d-none'); $("#purEditSubmitBtn").prop("disabled",false);
-        let obj={}; try{ obj=JSON.parse(res);}catch(e){}
-        if(obj.error){ $("#purEditError").html(obj.error).removeClass('d-none'); toastr.error("Please check errors list!","Error"); return; }
-        if(obj.success){ toastr.success("Purchase updated","Success"); $("#editPurchaseModal").modal('hide'); if(purchasesDT) purchasesDT.ajax.reload(null,false); return; }
-        toastr.error("Unexpected response","Error");
+      url: "<?= base_url() . 'purchase-update'; ?>",
+      type: "POST",
+      data: fd,
+      processData: false,
+      contentType: false,
+      cache: false,
+      beforeSend: function() {
+        $("#purEditSubmitBtn").prop("disabled", true);
+        $("#purEditSpinner").removeClass('d-none');
       },
-      error:function(){ $("#purEditSpinner").addClass('d-none'); $("#purEditSubmitBtn").prop("disabled",false); toastr.error("Error while sending request!","Error"); }
+      success: function(res) {
+        $("#purEditSpinner").addClass('d-none');
+        $("#purEditSubmitBtn").prop("disabled", false);
+        let obj = {};
+        try {
+          obj = JSON.parse(res);
+        } catch (e) {}
+        if (obj.error) {
+          $("#purEditError").html(obj.error).removeClass('d-none');
+          toastr.error("Please check errors list!", "Error");
+          return;
+        }
+        if (obj.success) {
+          toastr.success("Purchase updated", "Success");
+          $("#editPurchaseModal").modal('hide');
+          if (purchasesDT) purchasesDT.ajax.reload(null, false);
+          return;
+        }
+        toastr.error("Unexpected response", "Error");
+      },
+      error: function() {
+        $("#purEditSpinner").addClass('d-none');
+        $("#purEditSubmitBtn").prop("disabled", false);
+        toastr.error("Error while sending request!", "Error");
+      }
     });
   });
 </script>
