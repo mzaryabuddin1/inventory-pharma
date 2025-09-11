@@ -334,7 +334,7 @@ class App_model extends CI_Model
     }
 
     // LEDGER: supplier debit (we owe supplier)
-    $this->ledger_post('supplier', (int)$data['supplier_id'], 'purchase', $data['ref_no'], (float)$data['total_amount'], 'debit');
+    $this->ledger_post('supplier', (int)$data['supplier_id'], 'purchase', $data['ref_no'], (float)$data['total_amount'], 'credit');
 
     $this->db->trans_complete();
     return $this->db->trans_status();
@@ -414,7 +414,7 @@ class App_model extends CI_Model
       $this->stock_adjust((int)$it['product_id'], $it['batch_no'], - ((int)$it['qty']));
     }
     // LEDGER: supplier credit (we owe less)
-    $this->ledger_post('supplier', (int)$data['supplier_id'], 'purchase_return', $data['ref_no'], (float)$data['return_amount'], 'credit');
+    $this->ledger_post('supplier', (int)$data['supplier_id'], 'purchase_return', $data['ref_no'], (float)$data['return_amount'], 'debit');
 
     $this->db->trans_complete();
     return $this->db->trans_status();
@@ -492,7 +492,7 @@ class App_model extends CI_Model
       $this->stock_adjust((int)$it['product_id'], $it['batch_no'], - ((int)$it['qty']));
     }
     // LEDGER: customer credit (they owe us)
-    $this->ledger_post('customer', (int)$data['customer_id'], 'sales', $data['invoice_no'], (float)$data['total_amount'], 'credit');
+    $this->ledger_post('customer', (int)$data['customer_id'], 'sales', $data['invoice_no'], (float)$data['total_amount'], 'debit');
 
     $this->db->trans_complete();
     return $this->db->trans_status();
@@ -571,7 +571,7 @@ class App_model extends CI_Model
       $this->stock_adjust((int)$it['product_id'], $it['batch_no'], + ((int)$it['qty']));
     }
     // LEDGER: customer debit (we owe them / reduce receivable)
-    $this->ledger_post('customer', (int)$data['customer_id'], 'sales_return', $data['ref_no'], (float)$data['return_amount'], 'debit');
+    $this->ledger_post('customer', (int)$data['customer_id'], 'sales_return', $data['ref_no'], (float)$data['return_amount'], 'credit');
 
     $this->db->trans_complete();
     return $this->db->trans_status();
@@ -822,30 +822,46 @@ class App_model extends CI_Model
   // Opening balance up to (but excluding) date_from
   private function ledger_opening_balance($party_type, $party_id, $date_from, $uid)
   {
-    $this->db->reset_query();                 // <<— important
+    // No opening when no date filter
+    if (empty($date_from)) return 0.0;
 
-    $this->db->select('COALESCE(SUM(credit - debit),0) AS bal')
+    $this->db->reset_query();
+    $this->db->select('COALESCE(SUM(debit),0) AS sdebit, COALESCE(SUM(credit),0) AS scredit', false)
       ->from('ledger')
-      ->where('created_by', (int)$uid);
+      ->where('created_by', (int)$uid)
+      ->where('DATE(entry_date) <', $date_from);
 
     if (!empty($party_type)) $this->db->where('party_type', $party_type);
     if (!empty($party_id))   $this->db->where('party_id', (int)$party_id);
-    if (!empty($date_from))  $this->db->where('entry_date <', $date_from . ' 00:00:00');
 
-    return (float)$this->db->get()->row()->bal;
+    $tot = $this->db->get()->row_array();
+    $sdebit  = (float)($tot['sdebit']  ?? 0);
+    $scredit = (float)($tot['scredit'] ?? 0);
+
+    // Apply the same sign rule we use for the running balance
+    if ($party_type === 'customer') {
+      // receivable (Dr) = Debits - Credits
+      return $sdebit - $scredit;
+    } elseif ($party_type === 'supplier') {
+      // payable (Cr) = Credits - Debits
+      return $scredit - $sdebit;
+    }
+
+    // Mixed parties: fall back to accounting net (Cr - Dr)
+    return $scredit - $sdebit;
   }
 
   public function datatable_ledger($start, $length, $order_by, $order_dir, $filters)
   {
     $uid = (int)$_SESSION['user_id'];
 
-    // --- TOTAL (tenant scoped) ---
+    // -------- TOTAL (tenant scoped)
     $this->db->reset_query();
     $total = $this->db->from('ledger')
       ->where('created_by', $uid)
       ->count_all_results();
 
-    // --- FILTERED COUNT ---
+    // -------- FILTERED COUNT
     $this->db->reset_query();
     $this->db->from('ledger')->where('created_by', $uid);
     if (!empty($filters['party_type'])) $this->db->where('party_type', $filters['party_type']);
@@ -863,7 +879,7 @@ class App_model extends CI_Model
     }
     $filtered = $this->db->count_all_results();
 
-    // --- OPENING (before date_from) ---
+    // -------- OPENING (before date_from) with proper sign
     $opening = $this->ledger_opening_balance(
       $filters['party_type'] ?? '',
       $filters['party_id']   ?? '',
@@ -871,9 +887,10 @@ class App_model extends CI_Model
       $uid
     );
 
-    // --- PAGE DATA ---
+    // -------- PAGE DATA
     $this->db->reset_query();
-    $this->db->select('id, entry_date, ref_type, ref_no, description, debit, credit')
+    // NOTE: also fetching party_type so we can handle "All" view row-by-row.
+    $this->db->select('id, entry_date, ref_type, ref_no, description, party_type, debit, credit')
       ->from('ledger')
       ->where('created_by', $uid);
 
@@ -894,34 +911,54 @@ class App_model extends CI_Model
     $safe = ['entry_date', 'ref_type', 'ref_no', 'description', 'debit', 'credit', 'id'];
     $order_by  = in_array($order_by, $safe, true) ? $order_by : 'entry_date';
     $order_dir = strtolower($order_dir) === 'desc' ? 'desc' : 'asc';
-    $this->db->order_by($order_by, $order_dir);
+    $this->db->order_by($order_by, $order_dir);   // keep ASC for correct running calc
 
     if ($length > 0) $this->db->limit($length, $start);
 
     $rows = $this->db->get()->result_array();
 
-    // running/page totals
-    $running = $opening;
-    $sum_debit = 0;
-    $sum_credit = 0;
+    // -------- Running/page totals (correct sign)
+    $running    = $opening;
+    $sum_debit  = 0.0;
+    $sum_credit = 0.0;
+
+    $scope_party_type = $filters['party_type'] ?? ''; // may be empty for "All"
+
     foreach ($rows as &$r) {
       $d = (float)$r['debit'];
       $c = (float)$r['credit'];
-      $running += ($c - $d);
+
+      // What party_type to use for sign? Prefer the filter; fall back to row's party_type.
+      $ptype = $scope_party_type !== '' ? $scope_party_type : ($r['party_type'] ?? '');
+
+      if ($ptype === 'customer') {
+        // Customer: Debits raise balance (receivable), Credits lower it
+        $running += ($d - $c);
+      } elseif ($ptype === 'supplier') {
+        // Supplier: Credits raise balance (payable), Debits lower it
+        $running += ($c - $d);
+      } else {
+        // Mixed view: use net accounting (Cr - Dr)
+        $running += ($c - $d);
+      }
+
       $sum_debit  += $d;
       $sum_credit += $c;
       $r['balance'] = $running;
+      // Optional: if you do not want to expose party_type in the table, unset it
+      // unset($r['party_type']);
     }
+
     $closing = $running;
 
     return [
-      'total'     => $total,
-      'filtered'  => $filtered,
-      'rows'      => $rows,
-      'opening'   => $opening,
-      'sum_debit' => $sum_debit,
-      'sum_credit' => $sum_credit,
-      'closing'   => $closing,
+      'total'       => $total,
+      'filtered'    => $filtered,
+      'rows'        => $rows,
+      'opening'     => $opening,
+      'sum_debit'   => $sum_debit,
+      'sum_credit'  => $sum_credit,
+      'closing'     => $closing,
     ];
   }
 
@@ -1099,6 +1136,4 @@ class App_model extends CI_Model
       ->order_by('id', 'DESC')
       ->limit($limit)->get()->result_array();
   }
-
-  
 }

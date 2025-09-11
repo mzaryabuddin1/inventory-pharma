@@ -1521,7 +1521,8 @@ class App extends CI_Controller
             'description' => $desc,
             'debit'      => $debit,
             'credit'     => $credit,
-            'created_at' => date('Y-m-d H:i:s')
+            'created_at' => date('Y-m-d H:i:s'),
+            'created_by' => $_SESSION["user_id"]
         ]);
 
         echo json_encode(['success' => 1, 'message' => 'Payment saved.', 'id' => $payment_id]);

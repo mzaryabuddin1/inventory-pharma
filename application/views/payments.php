@@ -169,7 +169,7 @@
             <label class="col-sm-4 col-form-label">Party</label>
             <div class="col-sm-8">
               <select name="party_id" id="edit_party_id" class="form-control" required>
-                <option value="">Select party</option>
+                <option value="1">Select party</option>
                 <!-- TODO: populate based on type -->
               </select>
             </div>
